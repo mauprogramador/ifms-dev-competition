@@ -11,8 +11,9 @@ readme = "README.md"
 python = "^3.11"
 fastapi = {extras = ["standard"], version = "^0.115.6"}
 pydantic-settings = "^2.7.1"
-asgi-ratelimit = "^0.10.0"
 itsdangerous = "^2.2.0"
+python-multipart = "^0.0.20"
+slowapi = "^0.1.9"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"
@@ -34,7 +35,7 @@ python_version = "3.11"
 disable_error_code = ["assignment", "no-redef", "arg-type", "import-untyped"]
 
 [tool.pylint]
-disable = ["C0114", "C0115", "C0116", "C0123", "R0903", "E1136", "E0611", "E1131", "R0801"]
+disable = ["C0114", "C0115", "C0116", "C0123", "R0903", "R0913", "E1136", "E0611", "E1131", "R0801"]
 
 [tool.isort]
 multi_line_output = 3
