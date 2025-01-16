@@ -7,7 +7,7 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
-from src.patterns import HOST_PATTERN
+from src.common.patterns import HOST_PATTERN
 
 
 class EnvConfig(BaseSettings):
