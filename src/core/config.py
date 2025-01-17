@@ -13,7 +13,11 @@ SECRET_KEY = token_hex(nbytes=16)
 
 ENV = EnvConfig()
 LOG = Logging(*ENV.log_config)
+
 LIMITER = Limiter(key_func=get_remote_address)
+LIMIT = "60/2seconds"
+
+ERROR_MESSAGE = "Unexpected internal error occurred"
 
 HEADERS = [
     (
