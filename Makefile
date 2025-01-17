@@ -6,6 +6,9 @@ PORT ?= 8000
 
 # Environment setup
 
+venv:
+	@bash venv.sh
+
 install:
 	@poetry install --no-root
 
