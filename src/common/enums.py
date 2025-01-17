@@ -28,10 +28,6 @@ class FileType(StrEnum):
     HTML = "text/html"
     CSS = "text/css"
 
-    @classmethod
-    def get_media_types(cls):
-        return (cls.HTML.value, cls.CSS.value)
-
     @property
     def filename(self):
         return WebFile.HTML if self.name == "HTML" else WebFile.CSS
@@ -39,3 +35,11 @@ class FileType(StrEnum):
     @property
     def toggle(self):
         return self.CSS if self.name == "HTML" else self.HTML
+
+
+@unique
+class Operation(StrEnum):
+    RETRIEVE = "RETRIEVE"
+    UPLOAD = "UPLOAD"
+    EXCHANGE = "EXCHANGE"
+    ALL = "ALL"
