@@ -10,6 +10,7 @@ from src.common.params import ExchangeRetrieve, ExchangeUpload
 from src.core.config import LOG
 from src.utils.formater import (
     format_dynamic_report,
+    format_file_report,
     format_operation_report,
     set_operation_to_all,
 )
@@ -17,13 +18,13 @@ from src.utils.formater import (
 
 class Repository:
     __SELECT_DYNAMIC_REPORT = (
-        "SELECT * FROM Report WHERE dynamic=? ORDER BY timestamp ASC"
+        "SELECT * FROM Report WHERE dynamic=? ORDER BY timestamp ASC;"
     )
     __INSERT = """
         INSERT INTO Report (dynamic,code,operation,type_in,type_out,timestamp)
         VALUES (?, ?, ?, ?, ?, ?);
     """
-    __SELECT_OPERATION = """
+    __SELECT_OPERATION_REPORT = """
         SELECT
             code,
             operation,
@@ -32,7 +33,11 @@ class Repository:
             MAX(timestamp) AS last_timestamp
         FROM Report WHERE dynamic=? AND operation=? GROUP BY code;
     """
-    __SELECT_OPERATIONS = """
+    __SELECT_FILE_REPORT = """
+        SELECT MAX(timestamp) AS last_timestamp
+        FROM Report WHERE dynamic=? AND code=? AND type_in=?;
+    """
+    __SELECT_OPERATIONS_REPORT = """
         SELECT
             code,
             operation,
@@ -122,6 +127,13 @@ class Repository:
             ) from error
 
         LOG.info(f"{dynamic.value} reports found")
+
+        if reports is None or len(reports) == 0 or not all(reports):
+            raise HTTPException(
+                HTTPStatus.NOT_FOUND,
+                f"{dynamic.value} report not found",
+            )
+
         reports = list(map(format_dynamic_report, reports))
 
         return SuccessJSON(
@@ -136,14 +148,54 @@ class Repository:
         )
 
     @classmethod
+    async def get_file_report(
+        cls, request: Request, dynamic: Dynamic, query: ExchangeRetrieve
+    ) -> SuccessJSON:
+        params = (dynamic.value, query.code, query.type.value)
+
+        try:
+            with connect(cls.__DATABASE) as connection:
+                cursor = connection.cursor()
+                cursor.execute(cls.__SELECT_FILE_REPORT, params)
+                report = cursor.fetchone()
+
+        except OperationalError as error:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Failed getting {query.code} {query.type.value} file report",
+            ) from error
+
+        LOG.info(f"{query.code} {query.type.value} file report found")
+
+        if report is None or len(report) == 0 or not all(report):
+            raise HTTPException(
+                HTTPStatus.NOT_FOUND,
+                f"{query.code} {query.type.value} file report not found",
+            )
+
+        report = format_file_report(report)
+
+        return SuccessJSON(
+            request,
+            HTTPStatus.OK,
+            f"{query.code} {query.type.value} operation reports found",
+            {
+                "dynamic": dynamic.value,
+                "code": query.code,
+                "type": query.type.value,
+                "report": report,
+            },
+        )
+
+    @classmethod
     async def get_operation_reports(
         cls, request: Request, dynamic: Dynamic, operation: Operation
     ) -> SuccessJSON:
         if operation == Operation.ALL:
-            sql, params = cls.__SELECT_OPERATIONS, (dynamic.value,)
+            sql, params = cls.__SELECT_OPERATIONS_REPORT, (dynamic.value,)
 
         else:
-            sql = cls.__SELECT_OPERATION
+            sql = cls.__SELECT_OPERATION_REPORT
             params = (dynamic.value, operation.value)
 
         try:
@@ -159,6 +211,12 @@ class Repository:
             ) from error
 
         LOG.info(f"{operation.value} operation reports found")
+
+        if reports is None or len(reports) == 0 or not all(reports):
+            raise HTTPException(
+                HTTPStatus.NOT_FOUND,
+                f"Operation report {operation.value} not found",
+            )
 
         if operation == Operation.ALL:
             reports = list(map(set_operation_to_all, reports))

@@ -13,7 +13,7 @@ from src.common.params import (
     ExchangeUploadForm,
     TempFile,
 )
-from src.core.config import LIMITER, LOG
+from src.core.config import LIMITER, LIMIT, LOG
 from src.core.repository import Repository
 from src.core.use_cases import UseCases
 
@@ -38,7 +38,7 @@ async def api_create(request: Request) -> SuccessJSON:
     summary="Retrieves a code directory file",
     response_model=SuccessResponse,
 )
-@LIMITER.limit("30/5seconds")
+@LIMITER.limit(LIMIT)
 async def api_retrieve_file(
     request: Request, dynamic: DynamicPath, query: ExchangeRetrieveQuery
 ) -> SuccessJSON:
@@ -53,7 +53,7 @@ async def api_retrieve_file(
     summary="Uploads a code directory file",
     response_model=SuccessResponse,
 )
-@LIMITER.limit("30/5seconds")
+@LIMITER.limit(LIMIT)
 async def api_upload_file(
     request: Request, dynamic: DynamicPath, form: ExchangeUploadForm
 ) -> SuccessJSON:
@@ -68,7 +68,7 @@ async def api_upload_file(
     summary="Exchange files of a dynamic code directory",
     response_model=SuccessResponse,
 )
-@LIMITER.limit("30/5seconds")
+@LIMITER.limit(LIMIT)
 async def api_exchange(
     request: Request, dynamic: DynamicPath, form: ExchangeUploadForm
 ) -> SuccessJSON:
@@ -140,6 +140,20 @@ async def api_dynamic_report(
 ) -> SuccessJSON:
     LOG.debug({"dynamic": dynamic.value})
     return await Repository.get_dynamic_reports(request, dynamic)
+
+
+@router.get(
+    "/{dynamic}/file-report",
+    status_code=HTTPStatus.OK,
+    tags=["Report"],
+    summary="Retrieve a file report",
+    response_model=SuccessResponse,
+)
+async def api_file_report(
+    request: Request, dynamic: DynamicPath, query: ExchangeRetrieveQuery
+) -> SuccessJSON:
+    LOG.debug({"dynamic": dynamic.value, "query": query.model_dump()})
+    return await Repository.get_file_report(request, dynamic, query)
 
 
 @router.get(
