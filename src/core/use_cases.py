@@ -12,7 +12,7 @@ from fastapi import HTTPException, Request
 from fastapi.responses import FileResponse
 
 from src.api.presenters import SuccessJSON
-from src.common.enums import Dynamic, Operation, TeamsCount, WebFile
+from src.common.enums import Dynamic, Operation, CodeDirs, WebFile
 from src.common.params import ExchangeRetrieve, ExchangeUpload
 from src.core.config import LOG, ROOT_DIR
 from src.core.repository import Repository
@@ -27,17 +27,17 @@ class UseCases:
 
         try:
             makedirs(ROOT_DIR, exist_ok=True)
-            counts: dict[Dynamic, int] = {}
+            counts: dict[str, int] = {}
 
-            for dynamic, count in zip(Dynamic, TeamsCount):
+            for code_dir in CodeDirs:
 
-                dynamic_dir_path = join(ROOT_DIR, dynamic.lower())
+                dynamic_dir_path = join(ROOT_DIR, code_dir.name)
                 makedirs(dynamic_dir_path, exist_ok=True)
 
                 dirs_count = len(listdir(dynamic_dir_path))
-                count = count - dirs_count
+                count = code_dir.value - dirs_count
 
-                counts.setdefault(dynamic, count)
+                counts.setdefault(code_dir.name, count)
 
                 if count <= 0:
                     LOG.info(f"Dynamic dir {dynamic_dir_path} already exists")
@@ -55,7 +55,7 @@ class UseCases:
                         with open(file_path, mode="w", encoding="utf-8"):
                             pass
 
-                LOG.info(f"{dynamic} {count} dirs created")
+                LOG.info(f"{code_dir.name} {count} dirs created")
 
             return SuccessJSON(
                 request,
@@ -76,11 +76,12 @@ class UseCases:
     ) -> SuccessJSON:
         """Retrieves a code directory file"""
 
-        code_dir_path = join(ROOT_DIR, dynamic.lower(), query.code)
+        code_dir_path = join(ROOT_DIR, dynamic.value, query.code)
 
         if not exists(code_dir_path):
             raise HTTPException(
-                HTTPStatus.NOT_FOUND, f"Code directory {query.code} not found"
+                HTTPStatus.NOT_FOUND,
+                f"Code directory {query.code} not found",
             )
 
         filename = query.type.filename.value
@@ -119,7 +120,7 @@ class UseCases:
     ) -> SuccessJSON:
         """Uploads a code directory file"""
 
-        code_dir_path = join(ROOT_DIR, dynamic.lower(), form.code)
+        code_dir_path = join(ROOT_DIR, dynamic.value, form.code)
 
         if not exists(code_dir_path):
             raise HTTPException(
@@ -161,7 +162,7 @@ class UseCases:
     ) -> SuccessJSON:
         "Exchange files of a dynamic code directory"
 
-        code_dir_path = join(ROOT_DIR, dynamic.lower(), form.code)
+        code_dir_path = join(ROOT_DIR, dynamic.value, form.code)
 
         if not exists(code_dir_path):
             raise HTTPException(
@@ -220,7 +221,7 @@ class UseCases:
     ) -> SuccessJSON:
         """List a dynamic code directories"""
 
-        dynamic_dir_path = join(ROOT_DIR, dynamic.lower())
+        dynamic_dir_path = join(ROOT_DIR, dynamic.value)
 
         if not exists(dynamic_dir_path):
             raise HTTPException(
@@ -247,7 +248,7 @@ class UseCases:
     ) -> SuccessJSON:
         """Add a dynamic new code directory"""
 
-        dynamic_dir_path = join(ROOT_DIR, dynamic.lower())
+        dynamic_dir_path = join(ROOT_DIR, dynamic.value)
         dir_code = "".join(sample(ascii_uppercase, k=4))
 
         dir_path = join(dynamic_dir_path, dir_code)
@@ -274,16 +275,17 @@ class UseCases:
     ) -> SuccessJSON:
         """Remove a dynamic code directory"""
 
-        path = join(ROOT_DIR, dynamic.lower(), code)
+        code = code.upper()
+        dynamic_dir_path = join(ROOT_DIR, dynamic.value, code)
 
-        if not exists(path):
+        if not exists(dynamic_dir_path):
             raise HTTPException(
                 HTTPStatus.NOT_FOUND,
                 f"Dynamic code directory {code} not found",
             )
 
         try:
-            rmtree(path)
+            rmtree(dynamic_dir_path)
         except OSError as error:
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -304,7 +306,7 @@ class UseCases:
         dynamic: Dynamic, temp_file: _TemporaryFileWrapper
     ) -> FileResponse:
         """Downloads a dynamic directory tree"""
-        path = join(ROOT_DIR, dynamic.lower())
+        dynamic_dir_path = join(ROOT_DIR, dynamic.value)
 
         try:
             with ZipFile(
@@ -314,7 +316,7 @@ class UseCases:
                 compresslevel=9,
             ) as zip_archive:
 
-                root_dir = Path(path)
+                root_dir = Path(dynamic_dir_path)
 
                 for sub_dir in root_dir.rglob("*"):
                     arcname = sub_dir.relative_to(root_dir)
@@ -339,5 +341,5 @@ class UseCases:
         except Exception as error:
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Failed to compress {dynamic.lower()} directory",
+                f"Failed to compress {dynamic.value} directory",
             ) from error
