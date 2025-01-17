@@ -28,7 +28,7 @@ Technology in Systems Analysis and Development - <a href="https://www.ifms.edu.b
 
 **RESTful API**: <a href="http://127.0.0.1:8000/v1/ifms-dev-competition/api" target="_blank" rel="external" title="Web API">http://127.0.0.1:8000/v1/ifms-dev-competition/api</a>
 
-**Swagger UI**: <a href="http://127.0.0.1:8000/docs" target="_blank" rel="external" title="Swagger UI">http://127.0.0.1:8000/docs</a>
+**Swagger UI**: <a href="http://127.0.0.1:8000/docs" target="_blank" rel="external" title="Swagger UI">http://127.0.0.1:8000/</a>
 
 ---
 
@@ -36,9 +36,19 @@ Technology in Systems Analysis and Development - <a href="https://www.ifms.edu.b
 
 This **RESTful API** was developed to support the exchange of **HTML** and **CSS** files between teams in the **IFMS** programming competition.
 
-**1st Dynamic:** the pairs of each team will program independently and alternately, with each member in a language (**HTML** or **CSS**) one at a time.
+### Dynamics
 
-**2nd Dynamic:** the final, one finalist pair per team, the same project for all teams, the order and the way of programming will be decided by the game.
+**First:** the pairs of each team will program independently and alternately, with each member in a language (**HTML** or **CSS**) one at a time.
+
+**Last:** the final, one finalist pair per team, the same project for all teams, the order and the way of programming will be decided by the game.
+
+### Teams Count
+
+By default, **30** code directories will be generated for **First** Dynamic, and **10** code directories for **Last** Dynamic.
+
+### Files
+
+Each generated code directory will have two files: a **`text/html`** file type called **index.html** and a **`text/css`** file type called **`style.css`**.
 
 ---
 
@@ -69,7 +79,7 @@ You will need <a href="https://www.python.org/downloads/release/python-3117/" ta
 
 ```bash
 # Create new Venv
-python3.11 -m venv .venv
+make venv
 
 # Activate Venv
 source .venv/bin/activate
