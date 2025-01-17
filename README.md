@@ -48,7 +48,11 @@ By default, **30** code directories will be generated for **First** Dynamic, and
 
 ### Files
 
-Each generated code directory will have two files: a **`text/html`** file type called **index.html** and a **`text/css`** file type called **`style.css`**.
+Each generated code directory will have two files: a **`HTML`** file type called **index.html** and a **`CSS`** file type called **`style.css`**.
+
+### Rate Limit
+
+This application has a request rate limiting mechanism for **API tagged routes**, accepting up to **60 requests every 2 seconds**. Requests beyond this limit will be responded with an **HTTP 429 error**.
 
 ---
 
