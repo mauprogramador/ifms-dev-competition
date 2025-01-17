@@ -2,7 +2,7 @@ from tempfile import _TemporaryFileWrapper, NamedTemporaryFile
 from typing import Annotated
 
 from fastapi import Form, Depends, Path, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from src.common.enums import Dynamic, FileType, Operation
 from src.common.patterns import CODE_PATTERN
@@ -17,6 +17,11 @@ class ExchangeRetrieve(BaseModel):
         examples=["ABCD"],
     )
     type: FileType = Field(description="File type (HTML or CSS)")
+
+    @field_validator("code", mode="after")
+    @classmethod
+    def code_to_upper(cls, code: str) -> str:
+        return code.upper()
 
 
 class ExchangeUpload(ExchangeRetrieve):
