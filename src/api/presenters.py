@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import lru_cache
 from http import HTTPStatus
 from typing import Any
 
@@ -88,6 +89,7 @@ class ErrorJSON(JSONResponse):
         )
         super().__init__(content.model_dump(), code)
 
+    @lru_cache(maxsize=10)
     def __filter(self, item: dict[str, Any]) -> Any:
         if self.__KEY in item and item[self.__KEY] is PydanticUndefined:
             item[self.__KEY] = None
