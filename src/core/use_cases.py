@@ -12,8 +12,8 @@ from fastapi import HTTPException, Request
 from fastapi.responses import FileResponse
 
 from src.api.presenters import SuccessJSON
-from src.common.enums import Dynamic, FileType, TeamsCount, WebFile
-from src.common.types import Exchange
+from src.common.enums import Dynamic, Operation, TeamsCount, WebFile
+from src.common.params import ExchangeRetrieve, ExchangeUpload
 from src.core.config import LOG, ROOT_DIR
 from src.core.repository import Repository
 
@@ -71,22 +71,53 @@ class UseCases:
             ) from error
 
     @staticmethod
-    async def file_exchange(
-        request: Request, dynamic: Dynamic, form: Exchange
+    async def retrieve_file(
+        request: Request, dynamic: Dynamic, query: ExchangeRetrieve
     ) -> SuccessJSON:
-        "Exchange files of a dynamic code directory"
+        """Retrieves a code directory file"""
 
-        if form.file.content_type not in FileType.get_media_types():
+        code_dir_path = join(ROOT_DIR, dynamic.lower(), query.code)
+
+        if not exists(code_dir_path):
             raise HTTPException(
-                HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
-                "Unsupported file type. Only HTML and CSS are allowed",
+                HTTPStatus.NOT_FOUND, f"Code directory {query.code} not found"
             )
 
-        if form.file.content_type != form.type:
+        filename = query.type.filename.value
+        file_path = join(code_dir_path, filename)
+
+        try:
+            with open(file_path, mode="r", encoding="utf-8") as file:
+                content = file.read()
+
+        except Exception as error:
             raise HTTPException(
-                HTTPStatus.CONFLICT,
-                "Unsupported file type. Only HTML and CSS are allowed",
-            )
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Error in reading {filename}",
+            ) from error
+
+        message = f"Retrieve code dir {query.code} {filename}"
+        LOG.info(message)
+
+        Repository.add_report(dynamic, query, Operation.RETRIEVE)
+
+        return SuccessJSON(
+            request,
+            HTTPStatus.OK,
+            message,
+            {
+                "dynamic": dynamic.value,
+                "code": query.code,
+                "type": query.type.value,
+                "file": content,
+            },
+        )
+
+    @staticmethod
+    async def upload_file(
+        request: Request, dynamic: Dynamic, form: ExchangeUpload
+    ) -> SuccessJSON:
+        """Uploads a code directory file"""
 
         code_dir_path = join(ROOT_DIR, dynamic.lower(), form.code)
 
@@ -95,42 +126,93 @@ class UseCases:
                 HTTPStatus.NOT_FOUND, f"Code directory {form.code} not found"
             )
 
+        filename = form.type.filename.value
+        file_path = join(code_dir_path, filename)
+
         try:
-            file_path = join(code_dir_path, form.type.filename.lower())
-
             with open(file_path, mode="w", encoding="utf-8") as file:
-                content = await form.file.read()
-                file.write(content.decode(encoding="utf-8"))
-
-            alter_type = form.type.filename.toggle
-            file_path = join(code_dir_path, alter_type.lower())
-
-            with open(file_path, mode="r", encoding="utf-8") as file:
-                content = file.read()
-
-            message = (
-                f"Code directory {form.code} exchange "
-                f"{form.type.filename.lower()} to {alter_type.lower()}"
-            )
-            LOG.info(message)
-
-            Repository.add_report(dynamic, form)
-
-            return SuccessJSON(
-                request,
-                HTTPStatus.OK,
-                message,
-                {
-                    "code": form.code,
-                    "type": form.type.toggle.value,
-                    "file": content,
-                },
-            )
+                file.write(form.file)
 
         except Exception as error:
             raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR, "Error in exchanging files"
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Error in writing {filename}",
             ) from error
+
+        message = f"Upload code dir {form.code} {filename}"
+        LOG.info(message)
+
+        Repository.add_report(dynamic, form, Operation.UPLOAD)
+
+        return SuccessJSON(
+            request,
+            HTTPStatus.OK,
+            message,
+            {
+                "dynamic": dynamic.value,
+                "code": form.code,
+                "type": form.type.value,
+            },
+        )
+
+    @staticmethod
+    async def file_exchange(
+        request: Request, dynamic: Dynamic, form: ExchangeUpload
+    ) -> SuccessJSON:
+        "Exchange files of a dynamic code directory"
+
+        code_dir_path = join(ROOT_DIR, dynamic.lower(), form.code)
+
+        if not exists(code_dir_path):
+            raise HTTPException(
+                HTTPStatus.NOT_FOUND, f"Code directory {form.code} not found"
+            )
+
+        filename = form.type.filename.value
+        file_path = join(code_dir_path, filename)
+
+        try:
+            with open(file_path, mode="w", encoding="utf-8") as file:
+                file.write(form.file)
+
+        except Exception as error:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Error in writing {filename}",
+            ) from error
+
+        filename = form.type.filename.toggle.value
+        file_path = join(code_dir_path, filename)
+
+        try:
+            with open(file_path, mode="r", encoding="utf-8") as file:
+                content = file.read()
+
+        except Exception as error:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Error in reading {filename}",
+            ) from error
+
+        message = (
+            f"Code directory {form.code} exchange "
+            f"{form.type.filename.value} to {filename}"
+        )
+        LOG.info(message)
+
+        Repository.add_report(dynamic, form, Operation.EXCHANGE)
+
+        return SuccessJSON(
+            request,
+            HTTPStatus.OK,
+            message,
+            {
+                "dynamic": dynamic.value,
+                "code": form.code,
+                "type": form.type.toggle.value,
+                "file": content,
+            },
+        )
 
     @staticmethod
     async def list_code_directories(
@@ -152,7 +234,11 @@ class UseCases:
             request,
             HTTPStatus.OK,
             f"{dynamic.value} code directories",
-            {"count": len(code_dirs), dynamic.value: code_dirs},
+            {
+                "dynamic": dynamic.value,
+                "count": len(code_dirs),
+                dynamic.value: code_dirs,
+            },
         )
 
     @staticmethod
@@ -179,7 +265,7 @@ class UseCases:
             request,
             HTTPStatus.OK,
             f"New code directory {dir_code} added",
-            {"code": dir_code},
+            {"dynamic": dynamic.value, "code": dir_code},
         )
 
     @staticmethod
@@ -210,7 +296,7 @@ class UseCases:
             request,
             HTTPStatus.OK,
             f"Code directory {code} remove from {dynamic.value}",
-            {"code": code},
+            {"dynamic": dynamic.value, "code": code},
         )
 
     @staticmethod
