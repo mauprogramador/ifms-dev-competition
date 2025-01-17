@@ -3,14 +3,14 @@ from enum import IntEnum, StrEnum, unique
 
 @unique
 class Dynamic(StrEnum):
-    FIRST = "FIRST_DINAMIC"
-    LAST = "LAST_DINAMIC"
+    FIRST = "FIRST_DYNAMIC"
+    LAST = "LAST_DYNAMIC"
 
 
 @unique
-class TeamsCount(IntEnum):
-    FIRST = 30
-    LAST = 10
+class CodeDirs(IntEnum):
+    FIRST_DYNAMIC = 30
+    LAST_DYNAMIC = 10
 
 
 @unique
@@ -25,8 +25,8 @@ class WebFile(StrEnum):
 
 @unique
 class FileType(StrEnum):
-    HTML = "text/html"
-    CSS = "text/css"
+    HTML = "html"
+    CSS = "css"
 
     @property
     def filename(self):
