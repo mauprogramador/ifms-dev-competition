@@ -3,6 +3,7 @@ from functools import lru_cache
 from typing import Any
 
 from src.common.enums import Operation
+from src.core.config import ERROR_MESSAGE
 
 
 @lru_cache(maxsize=30)
@@ -50,3 +51,19 @@ def format_operation_report(report: tuple) -> dict[str, Any]:
         "last_timestamp": last.isoformat(),
         "elapsed_time": elapsed_time,
     }
+
+
+def format_file_report(report: tuple) -> dict[str, str]:
+    last = datetime.fromtimestamp(report[0])
+    return {"last_timestamp": last.isoformat()}
+
+
+def get_error_message(exc: Exception) -> str:
+    return exc.args[0] if exc.args[0] else ERROR_MESSAGE
+
+
+def format_error(exc: Exception, message: str = None) -> str:
+    if message is None:
+        message = get_error_message(exc)
+
+    return f"{type(exc).__name__}: {message}"
