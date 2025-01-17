@@ -41,6 +41,7 @@ app = FastAPI(
     summary="RESTful API for managing the IFMS Development Competition",
     description="⚙ [**RESTful API**](/v1/ifms-dev-competition/api)",
     version=f"v{__version__}",
+    docs_url="/",
     exception_handlers=ExceptionHandler().handlers,
     contact=CONTACT,
     license_info=LICENSE,
