@@ -1,9 +1,8 @@
-from datetime import datetime
 from enum import StrEnum
 from http import HTTPStatus
 from json import dumps
 from logging import DEBUG, ERROR, INFO, Formatter, StreamHandler, getLogger
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import RotatingFileHandler
 from os import makedirs
 from os.path import join, split, splitext
 from re import sub
@@ -42,7 +41,6 @@ class Logging:
     __LOGGER_NAME = "ifms.dev.competition"
     __FMT = "%(asctime)s %(message)s"
     __DATEFMT = "%Y-%m-%d %H:%M:%S"
-    __FILE = "records_{}.log"
     __DIR = ".logs"
 
     def __init__(
@@ -62,19 +60,17 @@ class Logging:
 
         if logging_file:
             makedirs(self.__DIR, exist_ok=True)
+            filename = join(self.__DIR, "records_0.log")
 
-            strftime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            filename = join(self.__DIR, self.__FILE.format(strftime))
-
-            file_handler = TimedRotatingFileHandler(
+            file_handler = RotatingFileHandler(
                 filename=filename,
-                when="W6",
-                backupCount=7,
+                mode="a",
+                maxBytes=50000,
+                backupCount=15,
                 encoding="utf-8",
             )
 
             file_handler.namer = self.__namer
-
             ansi_formatter = ANSIFormatter(self.__FMT, self.__DATEFMT)
             file_handler.setFormatter(ansi_formatter)
 
@@ -83,8 +79,8 @@ class Logging:
 
     def __namer(self, default_filename: str) -> str:
         log_dir = split(default_filename)[0]
-        log_date = splitext(default_filename)[1][1:]
-        return join(log_dir, self.__FILE.format(log_date))
+        log_count = splitext(default_filename)[1][1:]
+        return join(log_dir, f"records_{log_count}.log")
 
     def info(self, message: str) -> None:
         self.__logger.setLevel(INFO)
