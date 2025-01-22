@@ -1,14 +1,14 @@
-from time import time
 from http import HTTPStatus
 from sqlite3 import OperationalError, connect
+from time import time
 
 from fastapi import HTTPException, Request
 
 from src.api.presenters import SuccessJSON
-from src.common.enums import Dynamic, Operation
+from src.common.enums import Operation
 from src.common.params import ExchangeRetrieve, ExchangeUpload
 from src.core.config import LOG
-from src.utils.formater import (
+from src.utils.formaters import (
     format_dynamic_report,
     format_file_report,
     format_operation_report,
@@ -21,8 +21,9 @@ class Repository:
         "SELECT * FROM Report WHERE dynamic=? ORDER BY timestamp ASC;"
     )
     __INSERT = """
-        INSERT INTO Report (dynamic,code,operation,type_in,type_out,timestamp)
-        VALUES (?, ?, ?, ?, ?, ?);
+        INSERT INTO Report
+            (dynamic,code,operation,type_in,type_out,timestamp,similarity)
+        VALUES (?, ?, ?, ?, ?, ?, ?);
     """
     __SELECT_OPERATION_REPORT = """
         SELECT
@@ -30,7 +31,8 @@ class Repository:
             operation,
             COUNT(*) AS total_exchanges,
             MIN(timestamp) AS first_timestamp,
-            MAX(timestamp) AS last_timestamp
+            MAX(timestamp) AS last_timestamp,
+            MAX(similarity) AS last_comparison
         FROM Report WHERE dynamic=? AND operation=? GROUP BY code;
     """
     __SELECT_FILE_REPORT = """
@@ -44,6 +46,7 @@ class Repository:
             COUNT(*) AS total_exchanges,
             MIN(timestamp) AS first_timestamp,
             MAX(timestamp) AS last_timestamp
+            MAX(similarity) AS last_comparison
         FROM Report WHERE dynamic=? GROUP BY code;
     """
     __CREATE_TABLE = """
@@ -54,7 +57,8 @@ class Repository:
             operation TEXT NOT NULL,
             type_in TEXT NOT NULL,
             type_out TEXT NOT NULL,
-            timestamp REAL NOT NULL
+            timestamp REAL NOT NULL,
+            similarity REAL NULL
         );
     """
     __DATABASE = "database.db"
@@ -76,9 +80,10 @@ class Repository:
     @classmethod
     def add_report(
         cls,
-        dynamic: Dynamic,
+        dynamic: str,
         data: ExchangeUpload | ExchangeRetrieve,
         operation: Operation,
+        similarity: float = None,
     ) -> None:
         if operation == Operation.RETRIEVE:
             type_in, type_out = operation.value, data.type.value
@@ -90,12 +95,13 @@ class Repository:
             type_in, type_out = data.type.value, data.type.toggle.value
 
         params = (
-            dynamic.value,
+            dynamic,
             data.code,
             operation.value,
             type_in,
             type_out,
             time(),
+            similarity,
         )
 
         try:
@@ -107,41 +113,40 @@ class Repository:
             LOG.info("Report added successfully")
 
         except OperationalError as error:
-            LOG.error("Failed to save report")
+            LOG.error("Failed saving report")
             LOG.exception(error)
 
     @classmethod
     async def get_dynamic_reports(
-        cls, request: Request, dynamic: Dynamic
+        cls, request: Request, dynamic: str
     ) -> SuccessJSON:
         try:
             with connect(cls.__DATABASE) as connection:
                 cursor = connection.cursor()
-                cursor.execute(cls.__SELECT_DYNAMIC_REPORT, (dynamic.value,))
+                cursor.execute(cls.__SELECT_DYNAMIC_REPORT, (dynamic,))
                 reports = cursor.fetchall()
 
         except OperationalError as error:
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Failed getting {dynamic.value} report",
+                f"Failed getting {dynamic} report",
             ) from error
 
-        LOG.info(f"{dynamic.value} reports found")
+        LOG.info(f"{dynamic} reports found")
 
         if reports is None or len(reports) == 0 or not all(reports):
             raise HTTPException(
                 HTTPStatus.NOT_FOUND,
-                f"{dynamic.value} report not found",
+                f"{dynamic} report not found",
             )
 
         reports = list(map(format_dynamic_report, reports))
 
         return SuccessJSON(
             request,
-            HTTPStatus.OK,
-            f"{dynamic.value} reports found",
+            f"{dynamic} reports found",
             {
-                "dynamic": dynamic.value,
+                "dynamic": dynamic,
                 "count": len(reports),
                 "reports": reports,
             },
@@ -149,9 +154,9 @@ class Repository:
 
     @classmethod
     async def get_file_report(
-        cls, request: Request, dynamic: Dynamic, query: ExchangeRetrieve
+        cls, request: Request, dynamic: str, query: ExchangeRetrieve
     ) -> SuccessJSON:
-        params = (dynamic.value, query.code, query.type.value)
+        params = (dynamic, query.code, query.type.value)
 
         try:
             with connect(cls.__DATABASE) as connection:
@@ -177,10 +182,9 @@ class Repository:
 
         return SuccessJSON(
             request,
-            HTTPStatus.OK,
             f"{query.code} {query.type.value} operation reports found",
             {
-                "dynamic": dynamic.value,
+                "dynamic": dynamic,
                 "code": query.code,
                 "type": query.type.value,
                 "report": report,
@@ -189,14 +193,14 @@ class Repository:
 
     @classmethod
     async def get_operation_reports(
-        cls, request: Request, dynamic: Dynamic, operation: Operation
+        cls, request: Request, dynamic: str, operation: Operation
     ) -> SuccessJSON:
         if operation == Operation.ALL:
-            sql, params = cls.__SELECT_OPERATIONS_REPORT, (dynamic.value,)
+            sql, params = cls.__SELECT_OPERATIONS_REPORT, (dynamic,)
 
         else:
             sql = cls.__SELECT_OPERATION_REPORT
-            params = (dynamic.value, operation.value)
+            params = (dynamic, operation.value)
 
         try:
             with connect(cls.__DATABASE) as connection:
@@ -225,10 +229,9 @@ class Repository:
 
         return SuccessJSON(
             request,
-            HTTPStatus.OK,
             f"{operation.value} operation reports found",
             {
-                "dynamic": dynamic.value,
+                "dynamic": dynamic,
                 "count": len(reports),
                 "reports": reports,
             },
