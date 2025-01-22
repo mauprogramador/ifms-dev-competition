@@ -6,3 +6,6 @@ ANSI_ESCAPE_PATTERN = r"\x1b\[[0-9\;]*m"
 
 # e.g. GTFS
 CODE_PATTERN = r"^[a-zA-Z]{4}$"
+
+# e.g. FINAL
+DYNAMIC_PATTERN = r"^[a-zA-Z\_\-]{1,50}$"
