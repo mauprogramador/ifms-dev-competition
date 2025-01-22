@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from src import __version__
+from src.api.lifespan import lifespan
 from src.api.middleware import TracingTimeExceptionHandlerMiddleware
 from src.api.presenters import ErrorResponse, SuccessResponse
 from src.api.routes import router
@@ -43,11 +44,13 @@ app = FastAPI(
     version=f"v{__version__}",
     docs_url="/",
     exception_handlers=ExceptionHandler().handlers,
+    lifespan=lifespan,
     contact=CONTACT,
     license_info=LICENSE,
     responses=RESPONSES,
 )
 app.state.limiter = LIMITER
+app.state.start = False
 
 app.add_middleware(TracingTimeExceptionHandlerMiddleware)
 
