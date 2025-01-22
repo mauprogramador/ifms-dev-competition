@@ -1,4 +1,6 @@
+from hashlib import shake_256
 from http import HTTPStatus
+from io import BytesIO
 from os import listdir, makedirs
 from os.path import exists, join
 from pathlib import Path
@@ -8,80 +10,291 @@ from string import ascii_uppercase
 from tempfile import _TemporaryFileWrapper
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from fastapi import HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi import HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.security import OAuth2PasswordRequestForm
+from numpy import array
+from PIL import Image
+from skimage.metrics import structural_similarity
 
 from src.api.presenters import SuccessJSON
-from src.common.enums import Dynamic, Operation, CodeDirs, WebFile
-from src.common.params import ExchangeRetrieve, ExchangeUpload
-from src.core.config import LOG, ROOT_DIR
-from src.core.repository import Repository
+from src.common.enums import WebFile
+from src.common.params import (
+    CreateNewDynamic,
+    ExchangeRetrieve,
+    ExchangeUpload,
+)
+from src.core.config import (
+    ANSWER_KEY_FILENAME,
+    IMG_DIR,
+    LOG,
+    TOKEN,
+    USERS,
+    WEB_DIR,
+    WEB_DRIVER,
+)
 
 
 class UseCases:
     """Handles all request processing"""
 
     @staticmethod
-    async def create_directory_tree(request: Request) -> SuccessJSON:
-        """Generates the entire directory tree"""
+    async def get_oauth2_token(
+        form: OAuth2PasswordRequestForm,
+    ) -> JSONResponse:
+        """Gets the OAuth2 token"""
+
+        password = USERS.get(form.username)
+        if not password:
+            raise HTTPException(
+                HTTPStatus.NOT_FOUND, f"User {form.username} not found"
+            )
+
+        encoded_password = form.password.encode(encoding="utf-8")
+        hashed_password = shake_256(encoded_password).hexdigest(15)
+
+        if password != hashed_password:
+            raise HTTPException(
+                HTTPStatus.UNAUTHORIZED, "Invalid username or password"
+            )
+
+        encoded_token = TOKEN.encode(encoding="utf-8")
+        token_hash = shake_256(encoded_token).hexdigest(15)
+
+        LOG.info("OAuth2 Token retrieved")
+
+        return JSONResponse(
+            {
+                "access_token": token_hash,
+                "token_type": "bearer",
+            },
+            HTTPStatus.OK,
+        )
+
+    @staticmethod
+    async def set_start(request: Request) -> SuccessJSON:
+        request.app.state.start = not request.app.state.start
+        LOG.info(f"\033[33mStart state set to {request.app.state.start}")
+
+        return SuccessJSON(
+            request,
+            f"Start state set to {request.app.state.start}",
+            {"start": request.app.state.start},
+        )
+
+    @staticmethod
+    async def save_answer_key(
+        request: Request, file: UploadFile
+    ) -> SuccessJSON:
+        """Saves answer key image"""
 
         try:
-            makedirs(ROOT_DIR, exist_ok=True)
-            counts: dict[str, int] = {}
+            makedirs(IMG_DIR, exist_ok=True)
+            file_path = join(IMG_DIR, ANSWER_KEY_FILENAME)
 
-            for code_dir in CodeDirs:
+            content = await file.read()
+            image = Image.open(BytesIO(content))
+            image.save(file_path, format="PNG")
 
-                dynamic_dir_path = join(ROOT_DIR, code_dir.name)
-                makedirs(dynamic_dir_path, exist_ok=True)
+            WEB_DRIVER.set_window_size(image.width, image.height)
 
-                dirs_count = len(listdir(dynamic_dir_path))
-                count = code_dir.value - dirs_count
-
-                counts.setdefault(code_dir.name, count)
-
-                if count <= 0:
-                    LOG.info(f"Dynamic dir {dynamic_dir_path} already exists")
-                    continue
-
-                for _ in range(count):
-                    dir_code = "".join(sample(ascii_uppercase, k=4))
-
-                    dir_path = join(dynamic_dir_path, dir_code)
-                    makedirs(dir_path, exist_ok=True)
-
-                    for file in WebFile:
-                        file_path = join(dir_path, file)
-
-                        with open(file_path, mode="w", encoding="utf-8"):
-                            pass
-
-                LOG.info(f"{code_dir.name} {count} dirs created")
-
-            return SuccessJSON(
-                request,
-                HTTPStatus.CREATED,
-                "Dynamics tree code directories created",
-                {"counts": counts},
-            )
+            LOG.info(f"Answer-Key image {image.size} saved in PNG")
 
         except Exception as error:
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
-                "Error in creating directory tree",
+                f"Error in writing {ANSWER_KEY_FILENAME}",
             ) from error
+
+        return SuccessJSON(
+            request,
+            f"Answer key image {ANSWER_KEY_FILENAME} saved",
+        )
+
+    @staticmethod
+    async def list_dynamics(request: Request) -> SuccessJSON:
+        """Lists all Dynamics and its teams code dirs"""
+
+        dynamic_dirs = listdir(WEB_DIR)
+        LOG.info(f"There was {len(dynamic_dirs)} dynamics")
+
+        return SuccessJSON(
+            request,
+            "All dynamics teams code dirs",
+            {"count": len(dynamic_dirs), "dynamics": dynamic_dirs},
+        )
+
+    @staticmethod
+    async def add_dynamic(
+        request: Request, form: CreateNewDynamic
+    ) -> SuccessJSON:
+        """Adds a new Dynamic and its teams code dirs"""
+
+        try:
+            dynamic_dir_path = join(WEB_DIR, form.name)
+            makedirs(dynamic_dir_path, exist_ok=True)
+
+            dirs_count = len(listdir(dynamic_dir_path))
+            count = form.teams_number - dirs_count
+
+            if count <= 0:
+                LOG.info(f"Dynamic dir {dynamic_dir_path} already exists")
+                raise HTTPException(
+                    HTTPStatus.CONFLICT,
+                    f"Dynamic dir for {form.name} already exists",
+                )
+
+            for _ in range(count):
+                dir_code = "".join(sample(ascii_uppercase, k=4))
+
+                dir_path = join(dynamic_dir_path, dir_code)
+                makedirs(dir_path, exist_ok=True)
+
+                for file in WebFile:
+                    file_path = join(dir_path, file)
+
+                    with open(file_path, mode="w", encoding="utf-8"):
+                        pass
+
+            LOG.info(f"Dynamic {form.name} has {count} code dirs created")
+
+        except Exception as error:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Error in creating {form.name} code dirs",
+            ) from error
+
+        return SuccessJSON(
+            request,
+            f"{form.name} code dirs tree created",
+            {"dynamic": form.name, "count": count},
+            HTTPStatus.CREATED,
+        )
+
+    @staticmethod
+    async def remove_dynamic(request: Request, dynamic: str) -> SuccessJSON:
+        """Removes a Dynamic and its teams code dirs"""
+
+        dynamic_dir_path = join(WEB_DIR, dynamic)
+
+        if not exists(dynamic_dir_path):
+            raise HTTPException(
+                HTTPStatus.NOT_FOUND,
+                f"Dynamic {dynamic} dir not found",
+            )
+
+        try:
+            rmtree(dynamic_dir_path)
+        except OSError as error:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Error in removing dynamic dir {dynamic}",
+            ) from error
+
+        LOG.info(f"Dynamic {dynamic} removed")
+
+        return SuccessJSON(
+            request,
+            f"Dynamic {dynamic} removed",
+            {"dynamic": dynamic},
+        )
+
+    @staticmethod
+    async def list_code_dirs(request: Request, dynamic: str) -> SuccessJSON:
+        """List a dynamic code dirs"""
+
+        dynamic_dir_path = join(WEB_DIR, dynamic)
+
+        if not exists(dynamic_dir_path):
+            raise HTTPException(HTTPStatus.NOT_FOUND, "Root dir not found")
+
+        code_dirs = listdir(dynamic_dir_path)
+        LOG.info(f"{dynamic} has {len(code_dirs)} code dirs")
+
+        return SuccessJSON(
+            request,
+            f"{dynamic} code dirs",
+            {
+                "dynamic": dynamic,
+                "count": len(code_dirs),
+                "code_dirs": code_dirs,
+            },
+        )
+
+    @staticmethod
+    async def add_code_dir(request: Request, dynamic: str) -> SuccessJSON:
+        """Add a dynamic new code dir"""
+
+        dynamic_dir_path = join(WEB_DIR, dynamic)
+
+        dir_code = "".join(sample(ascii_uppercase, k=4))
+        dir_path = join(dynamic_dir_path, dir_code)
+
+        try:
+            makedirs(dir_path, exist_ok=True)
+
+            for file in WebFile:
+                file_path = join(dir_path, file)
+
+                with open(file_path, mode="w", encoding="utf-8"):
+                    pass
+
+        except Exception as error:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "Error in adding new code dir",
+            ) from error
+
+        LOG.info(f"Code dir {dir_code} added")
+
+        return SuccessJSON(
+            request,
+            f"New code dir {dir_code} added",
+            {"dynamic": dynamic, "code": dir_code},
+        )
+
+    @staticmethod
+    async def remove_code_dir(
+        request: Request, dynamic: str, code: str
+    ) -> SuccessJSON:
+        """Remove a dynamic code dir"""
+
+        dynamic_dir_path = join(WEB_DIR, dynamic, code)
+
+        if not exists(dynamic_dir_path):
+            raise HTTPException(
+                HTTPStatus.NOT_FOUND,
+                f"Dynamic code dir {code} not found",
+            )
+
+        try:
+            rmtree(dynamic_dir_path)
+        except OSError as error:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Error in removing dynamic code dir {code}",
+            ) from error
+
+        LOG.info(f"Code dir {code} removed")
+
+        return SuccessJSON(
+            request,
+            f"Code dir {code} remove from {dynamic}",
+            {"dynamic": dynamic, "code": code},
+        )
 
     @staticmethod
     async def retrieve_file(
-        request: Request, dynamic: Dynamic, query: ExchangeRetrieve
+        request: Request, dynamic: str, query: ExchangeRetrieve
     ) -> SuccessJSON:
-        """Retrieves a code directory file"""
+        """Retrieves a code dir file"""
 
-        code_dir_path = join(ROOT_DIR, dynamic.value, query.code)
+        code_dir_path = join(WEB_DIR, dynamic, query.code)
 
         if not exists(code_dir_path):
             raise HTTPException(
                 HTTPStatus.NOT_FOUND,
-                f"Code directory {query.code} not found",
+                f"Code dir {query.code} not found",
             )
 
         filename = query.type.filename.value
@@ -100,14 +313,11 @@ class UseCases:
         message = f"Retrieve code dir {query.code} {filename}"
         LOG.info(message)
 
-        Repository.add_report(dynamic, query, Operation.RETRIEVE)
-
         return SuccessJSON(
             request,
-            HTTPStatus.OK,
             message,
             {
-                "dynamic": dynamic.value,
+                "dynamic": dynamic,
                 "code": query.code,
                 "type": query.type.value,
                 "file": content,
@@ -116,15 +326,15 @@ class UseCases:
 
     @staticmethod
     async def upload_file(
-        request: Request, dynamic: Dynamic, form: ExchangeUpload
+        request: Request, dynamic: str, form: ExchangeUpload
     ) -> SuccessJSON:
-        """Uploads a code directory file"""
+        """Uploads a code dir file"""
 
-        code_dir_path = join(ROOT_DIR, dynamic.value, form.code)
+        code_dir_path = join(WEB_DIR, dynamic, form.code)
 
         if not exists(code_dir_path):
             raise HTTPException(
-                HTTPStatus.NOT_FOUND, f"Code directory {form.code} not found"
+                HTTPStatus.NOT_FOUND, f"Code dir {form.code} not found"
             )
 
         filename = form.type.filename.value
@@ -143,30 +353,27 @@ class UseCases:
         message = f"Upload code dir {form.code} {filename}"
         LOG.info(message)
 
-        Repository.add_report(dynamic, form, Operation.UPLOAD)
-
         return SuccessJSON(
             request,
-            HTTPStatus.OK,
             message,
             {
-                "dynamic": dynamic.value,
+                "dynamic": dynamic,
                 "code": form.code,
                 "type": form.type.value,
             },
         )
 
     @staticmethod
-    async def file_exchange(
-        request: Request, dynamic: Dynamic, form: ExchangeUpload
+    async def exchange_files(
+        request: Request, dynamic: str, form: ExchangeUpload
     ) -> SuccessJSON:
-        "Exchange files of a dynamic code directory"
+        "Exchange files of a dynamic code dir"
 
-        code_dir_path = join(ROOT_DIR, dynamic.value, form.code)
+        code_dir_path = join(WEB_DIR, dynamic, form.code)
 
         if not exists(code_dir_path):
             raise HTTPException(
-                HTTPStatus.NOT_FOUND, f"Code directory {form.code} not found"
+                HTTPStatus.NOT_FOUND, f"Code dir  {form.code} not found"
             )
 
         filename = form.type.filename.value
@@ -196,19 +403,16 @@ class UseCases:
             ) from error
 
         message = (
-            f"Code directory {form.code} exchange "
+            f"Code dir {form.code} exchange "
             f"{form.type.filename.value} to {filename}"
         )
         LOG.info(message)
 
-        Repository.add_report(dynamic, form, Operation.EXCHANGE)
-
         return SuccessJSON(
             request,
-            HTTPStatus.OK,
             message,
             {
-                "dynamic": dynamic.value,
+                "dynamic": dynamic,
                 "code": form.code,
                 "type": form.type.toggle.value,
                 "file": content,
@@ -216,97 +420,10 @@ class UseCases:
         )
 
     @staticmethod
-    async def list_code_directories(
-        request: Request, dynamic: Dynamic
-    ) -> SuccessJSON:
-        """List a dynamic code directories"""
-
-        dynamic_dir_path = join(ROOT_DIR, dynamic.value)
-
-        if not exists(dynamic_dir_path):
-            raise HTTPException(
-                HTTPStatus.NOT_FOUND, "Root directory not found"
-            )
-
-        code_dirs = listdir(dynamic_dir_path)
-        LOG.info(f"{dynamic.value} has {len(code_dirs)} code dirs")
-
-        return SuccessJSON(
-            request,
-            HTTPStatus.OK,
-            f"{dynamic.value} code directories",
-            {
-                "dynamic": dynamic.value,
-                "count": len(code_dirs),
-                dynamic.value: code_dirs,
-            },
-        )
-
-    @staticmethod
-    async def add_code_directory(
-        request: Request, dynamic: Dynamic
-    ) -> SuccessJSON:
-        """Add a dynamic new code directory"""
-
-        dynamic_dir_path = join(ROOT_DIR, dynamic.value)
-        dir_code = "".join(sample(ascii_uppercase, k=4))
-
-        dir_path = join(dynamic_dir_path, dir_code)
-        makedirs(dir_path, exist_ok=True)
-
-        for file in WebFile:
-            file_path = join(dir_path, file)
-
-            with open(file_path, mode="w", encoding="utf-8"):
-                pass
-
-        LOG.info(f"Code dir {dir_code} added")
-
-        return SuccessJSON(
-            request,
-            HTTPStatus.OK,
-            f"New code directory {dir_code} added",
-            {"dynamic": dynamic.value, "code": dir_code},
-        )
-
-    @staticmethod
-    async def remove_code_directory(
-        request: Request, dynamic: Dynamic, code: str
-    ) -> SuccessJSON:
-        """Remove a dynamic code directory"""
-
-        code = code.upper()
-        dynamic_dir_path = join(ROOT_DIR, dynamic.value, code)
-
-        if not exists(dynamic_dir_path):
-            raise HTTPException(
-                HTTPStatus.NOT_FOUND,
-                f"Dynamic code directory {code} not found",
-            )
-
-        try:
-            rmtree(dynamic_dir_path)
-        except OSError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Error in removing dynamic code directory {code}",
-            ) from error
-
-        LOG.info(f"Code dir {code} removed")
-
-        return SuccessJSON(
-            request,
-            HTTPStatus.OK,
-            f"Code directory {code} remove from {dynamic.value}",
-            {"dynamic": dynamic.value, "code": code},
-        )
-
-    @staticmethod
-    async def download_directory_tree(
-        dynamic: Dynamic, temp_file: _TemporaryFileWrapper
+    async def download_dir_tree(
+        dynamic: str, temp_file: _TemporaryFileWrapper
     ) -> FileResponse:
-        """Downloads a dynamic directory tree"""
-        dynamic_dir_path = join(ROOT_DIR, dynamic.value)
+        """Downloads a dynamic dir tree"""
 
         try:
             with ZipFile(
@@ -316,10 +433,11 @@ class UseCases:
                 compresslevel=9,
             ) as zip_archive:
 
-                root_dir = Path(dynamic_dir_path)
+                dynamic_dir = join(WEB_DIR, dynamic)
+                dynamic_dir_path = Path(dynamic_dir)
 
-                for sub_dir in root_dir.rglob("*"):
-                    arcname = sub_dir.relative_to(root_dir)
+                for sub_dir in dynamic_dir_path.rglob("*"):
+                    arcname = sub_dir.relative_to(dynamic_dir_path)
                     zip_archive.write(sub_dir, arcname=arcname)
 
                 filename = f"{dynamic.lower()}.zip"
@@ -341,5 +459,84 @@ class UseCases:
         except Exception as error:
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Failed to compress {dynamic.value} directory",
+                f"Failed to compress {dynamic} dir",
             ) from error
+
+    @staticmethod
+    async def compare_to_answer_key(
+        dynamic: str,
+        code: str,
+    ) -> float:
+
+        dynamic_dir = join(WEB_DIR, dynamic, code, WebFile.HTML)
+        dynamic_dir_path = Path(dynamic_dir)
+
+        if not dynamic_dir_path.exists():
+            raise HTTPException(
+                HTTPStatus.NOT_FOUND,
+                f"Index.html not found in {dynamic} {code} code dir",
+            )
+
+        try:
+            WEB_DRIVER.get(dynamic_dir_path.absolute().as_uri())
+            WEB_DRIVER.implicitly_wait(1)
+            screenshot = WEB_DRIVER.get_screenshot_as_png()
+
+            img_dir = join(IMG_DIR, dynamic)
+            makedirs(img_dir, exist_ok=True)
+
+            filename = f"{code.lower()}_screenshot.png"
+            file_path = join(img_dir, filename)
+
+            screenshot_image = Image.open(BytesIO(screenshot))
+            screenshot_image.save(file_path, format="PNG")
+
+        except Exception as error:
+            LOG.error(f"Error in getting {dynamic} {code} screenshot")
+
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Error in getting {dynamic} {code} screenshot",
+            ) from error
+
+        LOG.info(f"{dynamic} {code} screenshot saved")
+
+        answer_key_path = join(IMG_DIR, ANSWER_KEY_FILENAME)
+
+        if not exists(answer_key_path):
+            LOG.error("Answer-Key image not found")
+
+            raise HTTPException(
+                HTTPStatus.NOT_FOUND, "Answer-Key image not found"
+            )
+
+        try:
+            screenshot_image = screenshot_image.convert("L")
+            answer_key_image = Image.open(answer_key_path).convert("L")
+
+            if answer_key_image.size != screenshot_image.size:
+                answer_key_image = answer_key_image.resize(
+                    screenshot_image.size
+                )
+                answer_key_image.save(answer_key_path)
+
+            ssim: float = structural_similarity(
+                im1=array(answer_key_image),
+                im2=array(screenshot_image),
+                data_range=1.0,
+                gaussian_weights=True,
+                sigma=1.5,
+                multichannel=True,
+                use_sample_covariance=False,
+            )
+        except Exception as error:
+            LOG.error(f"Error in handling {dynamic} {code} images to compare")
+
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Error in handling {dynamic} {code} images to compare",
+            ) from error
+
+        LOG.info(f"Similarity of {code} to the answer-key: {ssim:.3f}")
+
+        return ssim
