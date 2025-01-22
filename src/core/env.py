@@ -50,8 +50,8 @@ class EnvConfig(BaseSettings):
     def check_reload_with_workers(self) -> Self:
         if self.reload is True and self.workers > 1:
             raise ValueError(
-                "\033[33mConfiguration conflict error:\033[31m you "
-                "cannot use reload together with multiple workers\033[m"
+                "\033[33mConfiguration conflict error:\033[31m cannot"
+                " use reload together with multiple workers\033[m"
             )
         return self
 
