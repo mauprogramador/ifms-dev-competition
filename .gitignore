@@ -69,3 +69,5 @@ csv/
 *.log
 web/
 *.db
+local_test.py
+images/
