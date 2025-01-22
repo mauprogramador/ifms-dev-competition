@@ -47,11 +47,14 @@ class SuccessJSON(JSONResponse):
     def __init__(
         self,
         request: Request,
-        code: int,
         message: str,
         data: dict[str, Any] | None = None,
+        code: HTTPStatus = None,
     ) -> None:
         """Success JSON representation response"""
+        if code is None:
+            code = HTTPStatus.OK
+
         content = SuccessResponse(
             success=True,
             code=code,
@@ -60,6 +63,7 @@ class SuccessJSON(JSONResponse):
             request=request,
             data=data,
         )
+
         super().__init__(content.model_dump(), code)
 
 
