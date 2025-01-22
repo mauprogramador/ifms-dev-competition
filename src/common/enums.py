@@ -1,16 +1,4 @@
-from enum import IntEnum, StrEnum, unique
-
-
-@unique
-class Dynamic(StrEnum):
-    FIRST = "FIRST_DYNAMIC"
-    LAST = "LAST_DYNAMIC"
-
-
-@unique
-class CodeDirs(IntEnum):
-    FIRST_DYNAMIC = 30
-    LAST_DYNAMIC = 10
+from enum import StrEnum, unique
 
 
 @unique
