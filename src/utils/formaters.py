@@ -6,6 +6,14 @@ from src.common.enums import Operation
 from src.core.config import ERROR_MESSAGE
 
 
+def format_dynamic(dynamic: str) -> str:
+    return dynamic.strip().upper().replace("-", "_").replace(" ", "_")
+
+
+def format_code(code: str) -> str:
+    return code.strip().upper()
+
+
 @lru_cache(maxsize=30)
 def format_dynamic_report(report: tuple) -> dict[str, Any]:
     timestamp = datetime.fromtimestamp(report[6])
@@ -18,7 +26,13 @@ def format_dynamic_report(report: tuple) -> dict[str, Any]:
         "type_in": report[4],
         "type_out": report[5],
         "timestamp": timestamp.isoformat(),
+        "similarity": report[7],
     }
+
+
+def format_file_report(report: tuple) -> dict[str, str]:
+    last = datetime.fromtimestamp(report[0])
+    return {"last_timestamp": last.isoformat()}
 
 
 @lru_cache(maxsize=30)
@@ -50,16 +64,12 @@ def format_operation_report(report: tuple) -> dict[str, Any]:
         "first_timestamp": first.isoformat(),
         "last_timestamp": last.isoformat(),
         "elapsed_time": elapsed_time,
+        "similarity": report[5],
     }
 
 
-def format_file_report(report: tuple) -> dict[str, str]:
-    last = datetime.fromtimestamp(report[0])
-    return {"last_timestamp": last.isoformat()}
-
-
 def get_error_message(exc: Exception) -> str:
-    return exc.args[0] if exc.args[0] else ERROR_MESSAGE
+    return exc.args[0] if exc.args and exc.args[0] else ERROR_MESSAGE
 
 
 def format_error(exc: Exception, message: str = None) -> str:

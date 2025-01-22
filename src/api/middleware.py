@@ -10,7 +10,7 @@ from starlette.responses import Response
 
 from src.api.presenters import ErrorJSON
 from src.core.config import LOG
-from src.utils.formater import format_error, get_error_message
+from src.utils.formaters import format_error, get_error_message
 
 
 class TracingTimeExceptionHandlerMiddleware(BaseHTTPMiddleware):

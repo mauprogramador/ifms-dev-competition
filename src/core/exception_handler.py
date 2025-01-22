@@ -11,8 +11,8 @@ from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.api.presenters import ErrorJSON
-from src.core.config import LOG, ERROR_MESSAGE
-from src.utils.formater import format_error
+from src.core.config import ERROR_MESSAGE, LOG
+from src.utils.formaters import format_error
 
 
 class ExceptionHandler:
