@@ -33,3 +33,11 @@ lint:
 	@poetry run black src/ --check
 	@poetry run pylint src/
 	@poetry run mypy src/
+
+# Clean data
+
+clean:
+	@rm -rf web/
+	@rm -rf images/
+	@rm database.db
+	@rm -rf .logs
