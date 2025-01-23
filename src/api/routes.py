@@ -18,6 +18,7 @@ from src.common.params import (
     Oauth2Token,
     OperationPath,
     TempFile,
+    WeightQuery,
 )
 from src.core.config import LIMIT, LIMITER, LOG
 from src.core.repository import Repository
@@ -49,6 +50,19 @@ async def get_oauth2_token(form: LoginForm) -> JSONResponse:
 )
 async def set_start(request: Request) -> SuccessJSON:
     return await UseCases.set_start(request)
+
+
+@router.post(
+    "/set-weight",
+    status_code=HTTPStatus.OK,
+    tags=["Admin"],
+    dependencies=[Oauth2Token],
+    summary="Sets the weight of the score calculation",
+    response_model=SuccessResponse,
+)
+async def set_weight(request: Request, weight: WeightQuery) -> SuccessJSON:
+    LOG.debug({"weight": weight})
+    return await UseCases.set_weight(request, weight)
 
 
 @router.post(
@@ -186,7 +200,8 @@ async def upload_file(
     response = await UseCases.upload_file(request, dynamic, form)
     ssim = await UseCases.compare_to_answer_key(dynamic, form.code)
 
-    Repository.add_report(dynamic, form, Operation.UPLOAD, ssim)
+    weight = request.app.state.weight
+    Repository.add_report(dynamic, form, Operation.UPLOAD, ssim, weight)
 
     return response
 
@@ -208,7 +223,8 @@ async def exchange_files(
     response = await UseCases.upload_file(request, dynamic, form)
     ssim = await UseCases.compare_to_answer_key(dynamic, form.code)
 
-    Repository.add_report(dynamic, form, Operation.EXCHANGE, ssim)
+    weight = request.app.state.weight
+    Repository.add_report(dynamic, form, Operation.EXCHANGE, ssim, weight)
 
     return response
 

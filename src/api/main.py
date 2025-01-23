@@ -49,8 +49,10 @@ app = FastAPI(
     license_info=LICENSE,
     responses=RESPONSES,
 )
+
 app.state.limiter = LIMITER
 app.state.start = False
+app.state.weight = 5000
 
 app.add_middleware(TracingTimeExceptionHandlerMiddleware)
 

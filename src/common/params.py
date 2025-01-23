@@ -57,7 +57,7 @@ class CreateNewDynamic(BaseModel):
     )
     teams_number: int = Field(
         description="Number of Teams to create code dirs",
-        ge=0,
+        ge=1,
         le=200,
         examples=[15],
     )
@@ -137,3 +137,14 @@ ExchangeRetrieveQuery = Annotated[
 ExchangeUploadForm = Annotated[ExchangeUpload, Form(description="Upload")]
 
 OperationPath = Annotated[Operation, Path(description="Operation")]
+
+WeightQuery = Annotated[
+    float,
+    Query(
+        description="Score calculation Weight",
+        ge=1,
+        le=100000,
+        decimal_places=3,
+        examples=[5000],
+    ),
+]

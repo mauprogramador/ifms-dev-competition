@@ -22,8 +22,8 @@ class Repository:
     )
     __INSERT = """
         INSERT INTO Report
-            (dynamic,code,operation,type_in,type_out,timestamp,similarity)
-        VALUES (?, ?, ?, ?, ?, ?, ?);
+        (dynamic,code,operation,type_in,type_out,timestamp,similarity,score)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
     """
     __SELECT_OPERATION_REPORT = """
         SELECT
@@ -32,7 +32,8 @@ class Repository:
             COUNT(*) AS total_exchanges,
             MIN(timestamp) AS first_timestamp,
             MAX(timestamp) AS last_timestamp,
-            MAX(similarity) AS last_comparison
+            MAX(similarity) AS max_comparison,
+            MAX(score) AS max_score
         FROM Report WHERE dynamic=? AND operation=? GROUP BY code;
     """
     __SELECT_FILE_REPORT = """
@@ -45,8 +46,9 @@ class Repository:
             operation,
             COUNT(*) AS total_exchanges,
             MIN(timestamp) AS first_timestamp,
-            MAX(timestamp) AS last_timestamp
-            MAX(similarity) AS last_comparison
+            MAX(timestamp) AS last_timestamp,
+            MAX(similarity) AS max_comparison,
+            MAX(score) AS max_score
         FROM Report WHERE dynamic=? GROUP BY code;
     """
     __CREATE_TABLE = """
@@ -58,7 +60,8 @@ class Repository:
             type_in TEXT NOT NULL,
             type_out TEXT NOT NULL,
             timestamp REAL NOT NULL,
-            similarity REAL NULL
+            similarity REAL NULL,
+            score REAL NULL
         );
     """
     __DATABASE = "database.db"
@@ -83,7 +86,8 @@ class Repository:
         dynamic: str,
         data: ExchangeUpload | ExchangeRetrieve,
         operation: Operation,
-        similarity: float = None,
+        similarity: float | None = None,
+        weight: float | None = None,
     ) -> None:
         if operation == Operation.RETRIEVE:
             type_in, type_out = operation.value, data.type.value
@@ -94,6 +98,7 @@ class Repository:
         else:
             type_in, type_out = data.type.value, data.type.toggle.value
 
+        score = (similarity * weight) if similarity and weight else None
         params = (
             dynamic,
             data.code,
@@ -102,6 +107,7 @@ class Repository:
             type_out,
             time(),
             similarity,
+            score,
         )
 
         try:

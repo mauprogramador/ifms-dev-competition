@@ -20,13 +20,13 @@ def format_dynamic_report(report: tuple) -> dict[str, Any]:
 
     return {
         "id": report[0],
-        "dynamic": report[1],
         "code": report[2],
         "operation": report[3],
         "type_in": report[4],
         "type_out": report[5],
         "timestamp": timestamp.isoformat(),
         "similarity": report[7],
+        "score": report[8],
     }
 
 
@@ -65,6 +65,7 @@ def format_operation_report(report: tuple) -> dict[str, Any]:
         "last_timestamp": last.isoformat(),
         "elapsed_time": elapsed_time,
         "similarity": report[5],
+        "score": report[6],
     }
 
 

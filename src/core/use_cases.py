@@ -83,6 +83,17 @@ class UseCases:
         )
 
     @staticmethod
+    async def set_weight(request: Request, weight: float) -> SuccessJSON:
+        request.app.state.weight = weight
+        LOG.info(f"\033[33mWeight state set to {weight}")
+
+        return SuccessJSON(
+            request,
+            f"Weight state set to {weight}",
+            {"weight": request.app.state.weight},
+        )
+
+    @staticmethod
     async def save_answer_key(
         request: Request, file: UploadFile
     ) -> SuccessJSON:
