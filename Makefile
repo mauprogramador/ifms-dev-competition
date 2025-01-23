@@ -39,5 +39,5 @@ lint:
 clean:
 	@rm -rf web/
 	@rm -rf images/
-	@rm database.db
+	@rm -f database.db
 	@rm -rf .logs
