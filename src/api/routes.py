@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 from fastapi import Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse
 from fastapi.routing import APIRouter
 
 from src.api.presenters import SuccessJSON, SuccessResponse
@@ -12,10 +12,8 @@ from src.common.params import (
     DynamicPath,
     ExchangeRetrieveQuery,
     ExchangeUploadForm,
-    HasStarted,
-    LoginForm,
+    HasLock,
     NewDynamicForm,
-    Oauth2Token,
     OperationPath,
     TempFile,
     WeightQuery,
@@ -28,35 +26,33 @@ router = APIRouter(prefix="/v2/ifms-dev-competition/api")
 
 
 @router.post(
-    "/token",
+    "/lock-requests/{dynamic}",
     status_code=HTTPStatus.OK,
     tags=["Admin"],
-    summary="Obtain an OAuth2 token",
-    response_class=JSONResponse,
-    include_in_schema=False,
+    summary="Lock sending requests of a dynamic",
+    response_model=SuccessResponse,
 )
-async def get_oauth2_token(form: LoginForm) -> JSONResponse:
-    LOG.debug({"username": form.username, "password": form.password})
-    return await UseCases.get_oauth2_token(form)
+async def lock_requests(request: Request, dynamic: DynamicPath) -> SuccessJSON:
+    return await UseCases.lock_requests(request, dynamic)
 
 
 @router.post(
-    "/set-star",
+    "/unlock-requests/{dynamic}",
     status_code=HTTPStatus.OK,
     tags=["Admin"],
-    dependencies=[Oauth2Token],
-    summary="Sets the start of the request sending",
+    summary="Unlock sending requests of a dynamic",
     response_model=SuccessResponse,
 )
-async def set_start(request: Request) -> SuccessJSON:
-    return await UseCases.set_start(request)
+async def unlock_requests(
+    request: Request, dynamic: DynamicPath
+) -> SuccessJSON:
+    return await UseCases.unlock_requests(request, dynamic)
 
 
 @router.post(
     "/set-weight",
     status_code=HTTPStatus.OK,
     tags=["Admin"],
-    dependencies=[Oauth2Token],
     summary="Sets the weight of the score calculation",
     response_model=SuccessResponse,
 )
@@ -66,18 +62,28 @@ async def set_weight(request: Request, weight: WeightQuery) -> SuccessJSON:
 
 
 @router.post(
-    "/answer-key",
+    "/{dynamic}/answer-key",
     status_code=HTTPStatus.OK,
     tags=["Admin"],
-    dependencies=[Oauth2Token],
-    summary="Uploads answer key image",
+    summary="Saves a dynamic answer key image",
     response_model=SuccessResponse,
 )
 async def save_answer_key(
-    request: Request, file: AnswerKeyFile
+    request: Request, dynamic: DynamicPath, file: AnswerKeyFile
 ) -> SuccessJSON:
-    LOG.debug({"filename": file.filename})
-    return await UseCases.save_answer_key(request, file)
+    LOG.debug({"dynamic": dynamic, "filename": file.filename})
+    return await UseCases.save_answer_key(request, dynamic, file)
+
+
+@router.delete(
+    "/clean-all",
+    status_code=HTTPStatus.OK,
+    tags=["Admin"],
+    summary="Removes all test data",
+    response_model=SuccessResponse,
+)
+async def clean_all(request: Request) -> SuccessJSON:
+    return await UseCases.clean_all(request)
 
 
 @router.get(
@@ -95,7 +101,6 @@ async def list_dynamics(request: Request) -> SuccessJSON:
     "/add-dynamic",
     status_code=HTTPStatus.OK,
     tags=["Dynamics"],
-    dependencies=[Oauth2Token],
     summary="Adds a new Dynamic and its teams code dirs",
     response_model=SuccessResponse,
 )
@@ -108,7 +113,6 @@ async def add_dynamic(request: Request, form: NewDynamicForm) -> SuccessJSON:
     "/remove-dynamic/{dynamic}",
     status_code=HTTPStatus.OK,
     tags=["Dynamics"],
-    dependencies=[Oauth2Token],
     summary="Removes a Dynamic and its teams code dirs",
     response_model=SuccessResponse,
 )
@@ -119,8 +123,9 @@ async def remove_dynamic(
     return await UseCases.remove_dynamic(request, dynamic)
 
 
+# "/{dynamic}/list-code-dirs",
 @router.get(
-    "/{dynamic}/list-code-dirs",
+    "/{dynamic}/list",
     status_code=HTTPStatus.OK,
     tags=["Code Dirs"],
     summary="List a dynamic code dirs",
@@ -133,11 +138,11 @@ async def list_code_dirs(
     return await UseCases.list_code_dirs(request, dynamic)
 
 
+# "/{dynamic}/add-code-dir",
 @router.post(
-    "/{dynamic}/add-code-dir",
+    "/{dynamic}/add",
     status_code=HTTPStatus.OK,
     tags=["Code Dirs"],
-    dependencies=[Oauth2Token],
     summary="Add a dynamic new code dir",
     response_model=SuccessResponse,
 )
@@ -146,11 +151,11 @@ async def add_code_dir(request: Request, dynamic: DynamicPath) -> SuccessJSON:
     return await UseCases.add_code_dir(request, dynamic)
 
 
+# "/{dynamic}/remove-code-dir/{code}",
 @router.delete(
-    "/{dynamic}/remove-code-dir/{code}",
+    "/{dynamic}/remove/{code}",
     status_code=HTTPStatus.OK,
     tags=["Code Dirs"],
-    dependencies=[Oauth2Token],
     summary="Remove a dynamic code dir",
     response_model=SuccessResponse,
 )
@@ -161,11 +166,12 @@ async def remove_code_dir(
     return await UseCases.remove_code_dir(request, dynamic, code)
 
 
+# "/{dynamic}/retrieve-file",
 @router.get(
-    "/{dynamic}/retrieve-file",
+    "/{dynamic}/retrieve",
     status_code=HTTPStatus.OK,
     tags=["Files"],
-    dependencies=[HasStarted],
+    dependencies=[HasLock],
     summary="Retrieves a code dir file",
     response_model=SuccessResponse,
 )
@@ -183,11 +189,12 @@ async def retrieve_file(
     return response
 
 
+# "/{dynamic}/upload-file",
 @router.post(
-    "/{dynamic}/upload-file",
+    "/{dynamic}/upload",
     status_code=HTTPStatus.OK,
     tags=["Files"],
-    dependencies=[HasStarted],
+    dependencies=[HasLock],
     summary="Uploads a code dir file",
     response_model=SuccessResponse,
 )
@@ -206,11 +213,12 @@ async def upload_file(
     return response
 
 
+# "/{dynamic}/exchange-files",
 @router.put(
-    "/{dynamic}/exchange-files",
+    "/{dynamic}/exchange",
     status_code=HTTPStatus.OK,
     tags=["Files"],
-    dependencies=[HasStarted],
+    dependencies=[HasLock],
     summary="Exchange files of a dynamic code dir",
     response_model=SuccessResponse,
 )
@@ -233,7 +241,6 @@ async def exchange_files(
     "/{dynamic}/download",
     status_code=HTTPStatus.OK,
     tags=["Download"],
-    dependencies=[Oauth2Token],
     summary="Downloads a dynamic dir tree",
     response_class=FileResponse,
 )
