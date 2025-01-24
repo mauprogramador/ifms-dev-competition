@@ -1,4 +1,3 @@
-from hashlib import shake_256
 from http import HTTPStatus
 from os.path import exists, join
 from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
@@ -14,12 +13,11 @@ from fastapi import (
     Request,
     UploadFile,
 )
-from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import AfterValidator, BaseModel, Field, field_validator
 
 from src.common.enums import FileType, Operation
 from src.common.patterns import CODE_PATTERN, DYNAMIC_PATTERN
-from src.core.config import ANSWER_KEY_FILENAME, IMG_DIR, OAUTH2_SCHEME, TOKEN
+from src.core.config import ANSWER_KEY_FILENAME, IMG_DIR
 from src.utils.formaters import format_code, format_dynamic
 
 
@@ -73,30 +71,6 @@ async def get_temp_file():
         yield tmp_file
 
 
-async def verify_token(token: Annotated[str, Depends(OAUTH2_SCHEME)]) -> None:
-    encoded_token = shake_256(TOKEN.encode(encoding="utf-8")).hexdigest(15)
-    if token != encoded_token:
-        raise HTTPException(HTTPStatus.UNAUTHORIZED, "Invalid token")
-
-
-async def verify_start(request: Request) -> None:
-    if not request.app.state.start:
-        raise HTTPException(
-            HTTPStatus.LOCKED, "Request sending has not started yet"
-        )
-
-    answer_key_path = join(IMG_DIR, ANSWER_KEY_FILENAME)
-
-    if not exists(answer_key_path):
-        raise HTTPException(HTTPStatus.NOT_FOUND, "Answer-Key image not found")
-
-
-Oauth2Token = Depends(verify_token)
-
-HasStarted = Depends(verify_start)
-
-LoginForm = Annotated[OAuth2PasswordRequestForm, Depends()]
-
 DynamicPath = Annotated[
     Annotated[str, AfterValidator(format_dynamic)],
     Path(
@@ -148,3 +122,25 @@ WeightQuery = Annotated[
         examples=[5000],
     ),
 ]
+
+
+async def verify_lock(request: Request, dynamic: DynamicPath) -> None:
+    try:
+        lock_requests: bool = request.app.state.lock_requests[dynamic]
+    except KeyError as error:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND, f"Dynamic {dynamic} not found in State"
+        ) from error
+
+    if lock_requests:
+        raise HTTPException(
+            HTTPStatus.LOCKED, "Request sending has not started yet"
+        )
+
+    answer_key_path = join(IMG_DIR, dynamic, ANSWER_KEY_FILENAME)
+
+    if not exists(answer_key_path):
+        raise HTTPException(HTTPStatus.NOT_FOUND, "Answer-Key image not found")
+
+
+HasLock = Depends(verify_lock)
