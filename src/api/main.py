@@ -2,6 +2,7 @@ from http import HTTPStatus
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from src import __version__
@@ -9,7 +10,7 @@ from src.api.lifespan import lifespan
 from src.api.middleware import TracingTimeExceptionHandlerMiddleware
 from src.api.presenters import ErrorResponse, SuccessResponse
 from src.api.routes import router
-from src.core.config import ENV, LIMITER, SECRET_KEY
+from src.core.config import DEFAULT_LOCK, ENV, LIMITER, SECRET_KEY
 from src.core.exception_handler import ExceptionHandler
 
 CONTACT = {
@@ -51,7 +52,7 @@ app = FastAPI(
 )
 
 app.state.limiter = LIMITER
-app.state.start = False
+app.state.lock_requests = DEFAULT_LOCK
 app.state.weight = 5000
 
 app.add_middleware(TracingTimeExceptionHandlerMiddleware)
@@ -69,4 +70,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
+
+app.mount("/images", StaticFiles(directory="images"))
 app.include_router(router)
