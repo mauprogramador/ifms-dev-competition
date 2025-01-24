@@ -1,18 +1,17 @@
-from hashlib import shake_256
 from http import HTTPStatus
 from io import BytesIO
 from os import listdir, makedirs
-from os.path import exists, join
+from os.path import exists, join, splitext
 from pathlib import Path
 from random import sample
-from shutil import rmtree
+from shutil import copy2, rmtree
 from string import ascii_uppercase
 from tempfile import _TemporaryFileWrapper
+from time import strftime
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from fastapi import HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.responses import FileResponse
 from numpy import array
 from PIL import Image
 from skimage.metrics import structural_similarity
@@ -26,66 +25,64 @@ from src.common.params import (
 )
 from src.core.config import (
     ANSWER_KEY_FILENAME,
+    ENV,
     IMG_DIR,
     LOG,
-    TOKEN,
-    USERS,
     WEB_DIR,
     WEB_DRIVER,
 )
+from src.core.repository import Repository
 
 
 class UseCases:
     """Handles all request processing"""
 
     @staticmethod
-    async def get_oauth2_token(
-        form: OAuth2PasswordRequestForm,
-    ) -> JSONResponse:
-        """Gets the OAuth2 token"""
+    async def lock_requests(request: Request, dynamic: str) -> SuccessJSON:
+        """Lock sending requests of a dynamic"""
 
-        password = USERS.get(form.username)
-        if not password:
+        try:
+            request.app.state.lock_requests[dynamic] = True
+        except KeyError as error:
             raise HTTPException(
-                HTTPStatus.NOT_FOUND, f"User {form.username} not found"
-            )
+                HTTPStatus.NOT_FOUND, f"Dynamic {dynamic} not found in State"
+            ) from error
 
-        encoded_password = form.password.encode(encoding="utf-8")
-        hashed_password = shake_256(encoded_password).hexdigest(15)
-
-        if password != hashed_password:
-            raise HTTPException(
-                HTTPStatus.UNAUTHORIZED, "Invalid username or password"
-            )
-
-        encoded_token = TOKEN.encode(encoding="utf-8")
-        token_hash = shake_256(encoded_token).hexdigest(15)
-
-        LOG.info("OAuth2 Token retrieved")
-
-        return JSONResponse(
-            {
-                "access_token": token_hash,
-                "token_type": "bearer",
-            },
-            HTTPStatus.OK,
-        )
-
-    @staticmethod
-    async def set_start(request: Request) -> SuccessJSON:
-        request.app.state.start = not request.app.state.start
-        LOG.info(f"\033[33mStart state set to {request.app.state.start}")
+        lock_requests = request.app.state.lock_requests[dynamic]
+        LOG.info(f"{dynamic} requests locked. State set to {lock_requests}")
 
         return SuccessJSON(
             request,
-            f"Start state set to {request.app.state.start}",
-            {"start": request.app.state.start},
+            f"{dynamic} requests locked. State set to {lock_requests}",
+            {"lock_requests": lock_requests},
+        )
+
+    @staticmethod
+    async def unlock_requests(request: Request, dynamic: str) -> SuccessJSON:
+        """Unlock sending requests of a dynamic"""
+
+        try:
+            request.app.state.lock_requests[dynamic] = False
+        except KeyError as error:
+            raise HTTPException(
+                HTTPStatus.NOT_FOUND, f"Dynamic {dynamic} not found in State"
+            ) from error
+
+        lock_requests = request.app.state.lock_requests[dynamic]
+        LOG.info(f"{dynamic} requests unlocked. State set to {lock_requests}")
+
+        return SuccessJSON(
+            request,
+            f"{dynamic} requests unlocked. State set to {lock_requests}",
+            {"lock_requests": lock_requests},
         )
 
     @staticmethod
     async def set_weight(request: Request, weight: float) -> SuccessJSON:
+        """Sets the weight of the score calculation"""
+
         request.app.state.weight = weight
-        LOG.info(f"\033[33mWeight state set to {weight}")
+        LOG.info(f"Weight state set to {weight}")
 
         return SuccessJSON(
             request,
@@ -95,13 +92,16 @@ class UseCases:
 
     @staticmethod
     async def save_answer_key(
-        request: Request, file: UploadFile
+        request: Request, dynamic: str, file: UploadFile
     ) -> SuccessJSON:
-        """Saves answer key image"""
+        """Saves a dynamic answer key image"""
 
         try:
             makedirs(IMG_DIR, exist_ok=True)
-            file_path = join(IMG_DIR, ANSWER_KEY_FILENAME)
+            dynamic_dir = join(IMG_DIR, dynamic)
+
+            makedirs(dynamic_dir, exist_ok=True)
+            file_path = join(dynamic_dir, ANSWER_KEY_FILENAME)
 
             content = await file.read()
             image = Image.open(BytesIO(content))
@@ -121,6 +121,50 @@ class UseCases:
             request,
             f"Answer key image {ANSWER_KEY_FILENAME} saved",
         )
+
+    @staticmethod
+    async def clean_all(request: Request) -> SuccessJSON:
+        """Removes all test data"""
+
+        try:
+            for dynamic_dir in listdir(WEB_DIR):
+                rmtree(join(WEB_DIR, dynamic_dir))
+        except OSError as error:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Error in cleaning {WEB_DIR} dir",
+            ) from error
+
+        try:
+            for image_dir in listdir(IMG_DIR):
+                rmtree(join(IMG_DIR, image_dir))
+        except OSError as error:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Error in cleaning {IMG_DIR} dir",
+            ) from error
+
+        try:
+            timestamp = strftime("%Y-%m-%d_%H%-M-%S")
+            file = splitext(ENV.database_file)
+
+            backup_file = f"{file[0]}_{timestamp}{file[1]}"
+            copy2(ENV.database_file, backup_file)
+
+            Repository.clean_table()
+            request.app.state.lock_requests = {}
+
+            LOG.info("Database file backup created successfully")
+
+        except Exception as error:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "Error in making the database file backup",
+            ) from error
+
+        LOG.info("All test data has been removed")
+
+        return SuccessJSON(request, "All test data has been removed")
 
     @staticmethod
     async def list_dynamics(request: Request) -> SuccessJSON:
@@ -167,6 +211,7 @@ class UseCases:
                     with open(file_path, mode="w", encoding="utf-8"):
                         pass
 
+            request.app.state.lock_requests.setdefault(form.name, True)
             LOG.info(f"Dynamic {form.name} has {count} code dirs created")
 
         except Exception as error:
@@ -512,7 +557,7 @@ class UseCases:
 
         LOG.info(f"{dynamic} {code} screenshot saved")
 
-        answer_key_path = join(IMG_DIR, ANSWER_KEY_FILENAME)
+        answer_key_path = join(IMG_DIR, dynamic, ANSWER_KEY_FILENAME)
 
         if not exists(answer_key_path):
             LOG.error("Answer-Key image not found")
