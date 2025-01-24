@@ -10,8 +10,8 @@ from src.common.params import (
     AnswerKeyFile,
     CodePath,
     DynamicPath,
-    ExchangeRetrieveQuery,
-    ExchangeUploadForm,
+    RetrieveFileQuery,
+    UploadFileForm,
     HasLock,
     NewDynamicForm,
     OperationPath,
@@ -179,7 +179,7 @@ async def remove_code_dir(
 async def retrieve_file(
     request: Request,
     dynamic: DynamicPath,
-    query: ExchangeRetrieveQuery,
+    query: RetrieveFileQuery,
 ) -> SuccessJSON:
     LOG.debug({"dynamic": dynamic, "query": query.model_dump()})
 
@@ -200,7 +200,7 @@ async def retrieve_file(
 )
 @LIMITER.limit(LIMIT)
 async def upload_file(
-    request: Request, dynamic: DynamicPath, form: ExchangeUploadForm
+    request: Request, dynamic: DynamicPath, form: UploadFileForm
 ) -> SuccessJSON:
     LOG.debug({"dynamic": dynamic, "form": form.model_dump()})
 
@@ -209,30 +209,6 @@ async def upload_file(
 
     weight = request.app.state.weight
     Repository.add_report(dynamic, form, Operation.UPLOAD, ssim, weight)
-
-    return response
-
-
-# "/{dynamic}/exchange-files",
-@router.put(
-    "/{dynamic}/exchange",
-    status_code=HTTPStatus.OK,
-    tags=["Files"],
-    dependencies=[HasLock],
-    summary="Exchange files of a dynamic code dir",
-    response_model=SuccessResponse,
-)
-@LIMITER.limit(LIMIT)
-async def exchange_files(
-    request: Request, dynamic: DynamicPath, form: ExchangeUploadForm
-) -> SuccessJSON:
-    LOG.debug({"dynamic": dynamic, "form": form.model_dump()})
-
-    response = await UseCases.upload_file(request, dynamic, form)
-    ssim = await UseCases.compare_to_answer_key(dynamic, form.code)
-
-    weight = request.app.state.weight
-    Repository.add_report(dynamic, form, Operation.EXCHANGE, ssim, weight)
 
     return response
 
@@ -275,7 +251,7 @@ async def dynamic_report(
 )
 @LIMITER.limit(LIMIT)
 async def file_report(
-    request: Request, dynamic: DynamicPath, query: ExchangeRetrieveQuery
+    request: Request, dynamic: DynamicPath, query: RetrieveFileQuery
 ) -> SuccessJSON:
     LOG.debug({"dynamic": dynamic, "query": query.model_dump()})
     return await Repository.get_file_report(request, dynamic, query)

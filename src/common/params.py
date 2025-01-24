@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from os.path import exists, join
 from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
 from typing import Annotated
 
@@ -17,11 +16,10 @@ from pydantic import AfterValidator, BaseModel, Field, field_validator
 
 from src.common.enums import FileType, Operation
 from src.common.patterns import CODE_PATTERN, DYNAMIC_PATTERN
-from src.core.config import ANSWER_KEY_FILENAME, IMG_DIR
 from src.utils.formaters import format_code, format_dynamic
 
 
-class ExchangeRetrieve(BaseModel):
+class RetrieveData(BaseModel):
     code: str = Field(
         description="Directory code (4 letters)",
         pattern=CODE_PATTERN,
@@ -37,7 +35,7 @@ class ExchangeRetrieve(BaseModel):
         return code.strip().upper()
 
 
-class ExchangeUpload(ExchangeRetrieve):
+class UploadData(RetrieveData):
     file: str = Field(
         description="File to exchange (HTML or CSS)",
         min_length=1,
@@ -104,11 +102,11 @@ CodePath = Annotated[
 
 TempFile = Annotated[_TemporaryFileWrapper, Depends(get_temp_file)]
 
-ExchangeRetrieveQuery = Annotated[
-    ExchangeRetrieve, Query(description="Retrieve")
+RetrieveFileQuery = Annotated[
+    RetrieveData, Query(description="Retrieve")
 ]
 
-ExchangeUploadForm = Annotated[ExchangeUpload, Form(description="Upload")]
+UploadFileForm = Annotated[UploadData, Form(description="Upload")]
 
 OperationPath = Annotated[Operation, Path(description="Operation")]
 
@@ -136,11 +134,6 @@ async def verify_lock(request: Request, dynamic: DynamicPath) -> None:
         raise HTTPException(
             HTTPStatus.LOCKED, "Request sending has not started yet"
         )
-
-    answer_key_path = join(IMG_DIR, dynamic, ANSWER_KEY_FILENAME)
-
-    if not exists(answer_key_path):
-        raise HTTPException(HTTPStatus.NOT_FOUND, "Answer-Key image not found")
 
 
 HasLock = Depends(verify_lock)

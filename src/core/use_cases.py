@@ -20,8 +20,8 @@ from src.api.presenters import SuccessJSON
 from src.common.enums import WebFile
 from src.common.params import (
     CreateNewDynamic,
-    ExchangeRetrieve,
-    ExchangeUpload,
+    RetrieveData,
+    UploadData,
 )
 from src.core.config import (
     ANSWER_KEY_FILENAME,
@@ -341,7 +341,7 @@ class UseCases:
 
     @staticmethod
     async def retrieve_file(
-        request: Request, dynamic: str, query: ExchangeRetrieve
+        request: Request, dynamic: str, query: RetrieveData
     ) -> SuccessJSON:
         """Retrieves a code dir file"""
 
@@ -382,7 +382,7 @@ class UseCases:
 
     @staticmethod
     async def upload_file(
-        request: Request, dynamic: str, form: ExchangeUpload
+        request: Request, dynamic: str, form: UploadData
     ) -> SuccessJSON:
         """Uploads a code dir file"""
 
@@ -416,62 +416,6 @@ class UseCases:
                 "dynamic": dynamic,
                 "code": form.code,
                 "type": form.type.value,
-            },
-        )
-
-    @staticmethod
-    async def exchange_files(
-        request: Request, dynamic: str, form: ExchangeUpload
-    ) -> SuccessJSON:
-        "Exchange files of a dynamic code dir"
-
-        code_dir_path = join(WEB_DIR, dynamic, form.code)
-
-        if not exists(code_dir_path):
-            raise HTTPException(
-                HTTPStatus.NOT_FOUND, f"Code dir  {form.code} not found"
-            )
-
-        filename = form.type.filename.value
-        file_path = join(code_dir_path, filename)
-
-        try:
-            with open(file_path, mode="w", encoding="utf-8") as file:
-                file.write(form.file)
-
-        except Exception as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Error in writing {filename}",
-            ) from error
-
-        filename = form.type.filename.toggle.value
-        file_path = join(code_dir_path, filename)
-
-        try:
-            with open(file_path, mode="r", encoding="utf-8") as file:
-                content = file.read()
-
-        except Exception as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Error in reading {filename}",
-            ) from error
-
-        message = (
-            f"Code dir {form.code} exchange "
-            f"{form.type.filename.value} to {filename}"
-        )
-        LOG.info(message)
-
-        return SuccessJSON(
-            request,
-            message,
-            {
-                "dynamic": dynamic,
-                "code": form.code,
-                "type": form.type.toggle.value,
-                "file": content,
             },
         )
 
