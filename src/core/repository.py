@@ -7,7 +7,7 @@ from fastapi import HTTPException, Request
 from src.api.presenters import SuccessJSON
 from src.common.enums import Operation
 from src.common.params import ExchangeRetrieve, ExchangeUpload
-from src.core.config import LOG
+from src.core.config import ENV, LOG
 from src.utils.formaters import (
     format_dynamic_report,
     format_file_report,
@@ -61,10 +61,11 @@ class Repository:
             type_out TEXT NOT NULL,
             timestamp REAL NOT NULL,
             similarity REAL NULL,
-            score REAL NULL
+            score INTEGER NULL
         );
     """
-    __DATABASE = "database.db"
+    __DELETE_ALL = "DELETE FROM Report;"
+    __DATABASE = ENV.database_file
 
     @classmethod
     def create_table(cls) -> None:
@@ -78,6 +79,20 @@ class Repository:
 
         except OperationalError as error:
             LOG.error("Failed to create table")
+            LOG.exception(error)
+
+    @classmethod
+    def clean_table(cls) -> None:
+        try:
+            with connect(cls.__DATABASE) as connection:
+                cursor = connection.cursor()
+                cursor.execute(cls.__DELETE_ALL)
+                connection.commit()
+
+            LOG.info("Table cleaned successfully")
+
+        except OperationalError as error:
+            LOG.error("Failed to clean table")
             LOG.exception(error)
 
     @classmethod
@@ -98,7 +113,7 @@ class Repository:
         else:
             type_in, type_out = data.type.value, data.type.toggle.value
 
-        score = (similarity * weight) if similarity and weight else None
+        score = int(similarity * weight) if similarity and weight else None
         params = (
             dynamic,
             data.code,
