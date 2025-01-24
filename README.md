@@ -60,18 +60,23 @@ This application has a request rate limiting mechanism for **API tagged routes**
 
 You can create an `.env` file to configure the following options:
 
-| **Parameter**  | **Description**                                          | **Default** |
-| -------------- | -------------------------------------------------------- | ----------- |
-| `host`         | Sets the host address to listen on                       | `127.0.0.1` |
-| `port`         | Sets the server port on which the application will run   | `8000`      |
-| `reload`       | Enable auto-reload on file changes for local development | `false`     |
-| `workers`      | Sets multiple worker processes                           | `1`         |
-| `logging_file` | Enable saving logs to files                              | `false`     |
-| `debug`        | Enable the debug mode and debug logs                     | `false`     |
+| **Parameter**   | **Description**                                            | **Default**   |
+| --------------- | ---------------------------------------------------------- | ------------- |
+| `database_file` | Sets the database file (*.db*) absolute path               | `database.db` |
+| `host`          | Sets the host address to listen on                         | `127.0.0.1`   |
+| `port`          | Sets the server port on which the application will run     | `8000`        |
+| `reload`        | Enable auto-reload on file changes for local development   | `false`       |
+| `workers`       | Sets multiple worker processes                             | `1`           |
+| `logging_file`  | Enable saving logs to files                                | `false`       |
+| `debug`         | Enable the debug mode and debug logs                       | `false`       |
 
 - The `reload` and `workers` options are **mutually exclusive**.
 
 - Setting the `host` to `0.0.0.0` makes the application externally available.
+
+- Set the `database_file` like `/home/user/project/repository/database.db`.
+
+- Database backup files will be saved inside the `/repository` directory.
 
 Take a look at the [`.env.example`](./.env.example) file.
 
