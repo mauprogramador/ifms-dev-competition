@@ -1,6 +1,6 @@
+from os import listdir
 from secrets import token_hex
 
-from fastapi.security import OAuth2PasswordBearer
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -16,14 +16,11 @@ APP = "src.api.main:app"
 WEB_DIR = "web"
 IMG_DIR = "images"
 
+DEFAULT_LOCK = {dynamic: True for dynamic in listdir(WEB_DIR)}
+
 ANSWER_KEY_FILENAME = "answer_key.png"
 
 SECRET_KEY = token_hex(nbytes=16)
-TOKEN = token_hex(nbytes=16)
-
-OAUTH2_SCHEME = OAuth2PasswordBearer(
-    tokenUrl="/v2/ifms-dev-competition/api/token"
-)
 
 ENV = EnvConfig()
 LOG = Logging(*ENV.log_config)
@@ -32,8 +29,6 @@ LIMITER = Limiter(key_func=get_remote_address)
 LIMIT = "60/2seconds"
 
 ERROR_MESSAGE = "Unexpected internal error occurred"
-
-USERS = {"admin": "64faef9852f52d3a020b7def23b69b"}
 
 CHROME_OPTIONS = Options()
 CHROME_OPTIONS.add_argument("--headless")
