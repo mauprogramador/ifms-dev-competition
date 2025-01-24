@@ -6,7 +6,7 @@ from fastapi import HTTPException, Request
 
 from src.api.presenters import SuccessJSON
 from src.common.enums import Operation
-from src.common.params import ExchangeRetrieve, ExchangeUpload
+from src.common.params import RetrieveData, UploadData
 from src.core.config import ENV, LOG
 from src.utils.formaters import (
     format_dynamic_report,
@@ -22,7 +22,7 @@ class Repository:
     )
     __INSERT = """
         INSERT INTO Report
-        (dynamic,code,operation,type_in,type_out,timestamp,similarity,score)
+        (dynamic,code,operation,file_type,timestamp,similarity,score)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?);
     """
     __SELECT_OPERATION_REPORT = """
@@ -38,7 +38,7 @@ class Repository:
     """
     __SELECT_FILE_REPORT = """
         SELECT MAX(timestamp) AS last_timestamp
-        FROM Report WHERE dynamic=? AND code=? AND type_in=?;
+        FROM Report WHERE dynamic=? AND code=? AND file_type=?;
     """
     __SELECT_OPERATIONS_REPORT = """
         SELECT
@@ -57,8 +57,7 @@ class Repository:
             dynamic TEXT NOT NULL,
             code TEXT NOT NULL,
             operation TEXT NOT NULL,
-            type_in TEXT NOT NULL,
-            type_out TEXT NOT NULL,
+            file_type TEXT NOT NULL,
             timestamp REAL NOT NULL,
             similarity REAL NULL,
             score INTEGER NULL
@@ -99,27 +98,18 @@ class Repository:
     def add_report(
         cls,
         dynamic: str,
-        data: ExchangeUpload | ExchangeRetrieve,
+        data: UploadData | RetrieveData,
         operation: Operation,
         similarity: float | None = None,
         weight: float | None = None,
     ) -> None:
-        if operation == Operation.RETRIEVE:
-            type_in, type_out = operation.value, data.type.value
-
-        elif operation == Operation.UPLOAD:
-            type_in, type_out = data.type.value, operation.value
-
-        else:
-            type_in, type_out = data.type.value, data.type.toggle.value
-
         score = int(similarity * weight) if similarity and weight else None
+
         params = (
             dynamic,
             data.code,
             operation.value,
-            type_in,
-            type_out,
+            data.type.value,
             time(),
             similarity,
             score,
@@ -175,7 +165,7 @@ class Repository:
 
     @classmethod
     async def get_file_report(
-        cls, request: Request, dynamic: str, query: ExchangeRetrieve
+        cls, request: Request, dynamic: str, query: RetrieveData
     ) -> SuccessJSON:
         params = (dynamic, query.code, query.type.value)
 
