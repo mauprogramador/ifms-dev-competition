@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from os.path import exists
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,7 +10,7 @@ from src.api.lifespan import lifespan
 from src.api.middleware import TracingTimeExceptionHandlerMiddleware
 from src.api.presenters import ErrorResponse, SuccessResponse
 from src.api.routes import router
-from src.core.config import DEFAULT_LOCK, ENV, LIMITER, SECRET_KEY, WEB_DIR
+from src.core.config import DEFAULT_LOCK, ENV, LIMITER, SECRET_KEY
 from src.core.exception_handler import ExceptionHandler
 
 CONTACT = {
@@ -53,7 +52,7 @@ app = FastAPI(
 )
 
 app.state.limiter = LIMITER
-app.state.lock_requests = DEFAULT_LOCK if exists(WEB_DIR) else {}
+app.state.lock_requests = DEFAULT_LOCK
 app.state.weight = 5000
 
 app.add_middleware(TracingTimeExceptionHandlerMiddleware)

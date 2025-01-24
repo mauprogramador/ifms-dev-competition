@@ -1,4 +1,5 @@
 from os import listdir
+from os.path import exists
 from secrets import token_hex
 
 from selenium.webdriver import Chrome
@@ -16,7 +17,9 @@ APP = "src.api.main:app"
 WEB_DIR = "web"
 IMG_DIR = "images"
 
-DEFAULT_LOCK = {dynamic: True for dynamic in listdir(WEB_DIR)}
+DEFAULT_LOCK = (
+    {dynamic: True for dynamic in listdir(WEB_DIR)} if exists(WEB_DIR) else {}
+)
 
 ANSWER_KEY_FILENAME = "answer_key.png"
 
