@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "IFMS Dev Competition"
-version = "0.5.0"
+version = "0.5.2"
 description = "RESTful API for managing the IFMS Development Competition"
 authors = ["mauprogramador <sir.silvabmauricio@gmail.com>"]
 license = "MIT"
