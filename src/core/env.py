@@ -20,6 +20,7 @@ class EnvConfig(BaseSettings):
         env_ignore_empty=True,
     )
 
+    database_file: str = Field(default="database.db", min_length=1)
     host: str = Field(
         default="127.0.0.1",
         pattern=HOST_PATTERN,
