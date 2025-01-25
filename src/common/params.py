@@ -86,7 +86,7 @@ NewDynamicForm = Annotated[
 
 AnswerKeyFile = Annotated[
     UploadFile,
-    File(media_type="multipart/form-data", description="Answer Key image"),
+    File(media_type="image/*", description="Answer Key image"),
 ]
 
 CodePath = Annotated[
