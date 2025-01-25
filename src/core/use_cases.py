@@ -80,6 +80,12 @@ class UseCases:
     async def save_answer_key(
         request: Request, dynamic: str, file: UploadFile
     ) -> SuccessJSON:
+        if file.content_type and not file.content_type.startswith("image/"):
+            raise HTTPException(
+                HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
+                "Answer-Key file must be an image",
+            )
+
         try:
             makedirs(IMG_DIR, exist_ok=True)
             dynamic_dir = join(IMG_DIR, dynamic)
