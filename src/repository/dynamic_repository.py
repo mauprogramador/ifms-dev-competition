@@ -22,7 +22,6 @@ class DynamicRepository:
             LOG.info(f"{dynamic} dynamic added successfully")
 
         except OperationalError as error:
-            LOG.exception(error)
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 f"Failed saving {dynamic} dynamic",
@@ -39,7 +38,6 @@ class DynamicRepository:
             LOG.info("Dynamic added successfully")
 
         except OperationalError as error:
-            LOG.exception(error)
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 f"Failed saving {dynamic} dynamic",
@@ -55,7 +53,6 @@ class DynamicRepository:
                 connection.commit()
 
         except OperationalError as error:
-            LOG.exception(error)
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 f"Failed getting {dynamic} lock status",
@@ -79,7 +76,6 @@ class DynamicRepository:
                 connection.commit()
 
         except OperationalError as error:
-            LOG.exception(error)
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 f"Failed setting lock status for {dynamic} dynamic",
@@ -95,7 +91,6 @@ class DynamicRepository:
                 connection.commit()
 
         except OperationalError as error:
-            LOG.exception(error)
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 f"Failed getting {dynamic} weight",
@@ -138,7 +133,6 @@ class DynamicRepository:
                 connection.commit()
 
         except OperationalError as error:
-            LOG.exception(error)
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 f"Failed getting {dynamic} weight",
@@ -162,7 +156,6 @@ class DynamicRepository:
                 connection.commit()
 
         except OperationalError as error:
-            LOG.exception(error)
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 f"Failed setting weight for {dynamic} dynamic",
