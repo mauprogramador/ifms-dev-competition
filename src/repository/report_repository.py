@@ -8,6 +8,7 @@ from src.api.presenters import SuccessJSON
 from src.common.enums import Operation
 from src.common.params import RetrieveData, UploadData
 from src.core.config import ENV, LOG
+from src.repository.dynamic_repository import DynamicRepository
 from src.utils.formaters import (
     format_dynamic_report,
     format_file_report,
@@ -27,9 +28,13 @@ class ReportRepository:
         data: UploadData | RetrieveData,
         operation: Operation,
         similarity: float | None = None,
-        weight: float | None = None,
     ) -> None:
-        score = int(similarity * weight) if similarity and weight else None
+        weight = DynamicRepository.get_weight(dynamic)
+
+        if similarity is not None:
+            score = int((similarity * weight) / 100)
+        else:
+            score = None
 
         params = (
             dynamic,
