@@ -29,5 +29,4 @@ class FileType(StrEnum):
 class Operation(StrEnum):
     RETRIEVE = "RETRIEVE"
     UPLOAD = "UPLOAD"
-    EXCHANGE = "EXCHANGE"
     ALL = "ALL"
