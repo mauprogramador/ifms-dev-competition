@@ -17,7 +17,7 @@ slowapi = "^0.1.9"
 pillow = "^11.1.0"
 selenium = "^4.28.0"
 webdriver-manager = "^4.0.2"
-scikit-image = "^0.25.0"
+opencv-python = "^4.11.0.86"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"
