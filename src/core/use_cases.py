@@ -66,7 +66,7 @@ class UseCases:
 
     @staticmethod
     async def set_weight(
-        request: Request, dynamic: str, weight: float
+        request: Request, dynamic: str, weight: int
     ) -> SuccessJSON:
         """Sets the weight of the score calculation"""
 

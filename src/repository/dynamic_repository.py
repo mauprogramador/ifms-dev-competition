@@ -158,7 +158,7 @@ class DynamicRepository:
         try:
             with connect(cls.__DATABASE) as connection:
                 cursor = connection.cursor()
-                cursor.execute(queries.UPDATE_LOCK_STATUS, (weight, dynamic))
+                cursor.execute(queries.UPDATE_WEIGHT, (weight, dynamic))
                 connection.commit()
 
         except OperationalError as error:

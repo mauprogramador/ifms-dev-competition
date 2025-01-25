@@ -111,12 +111,11 @@ UploadFileForm = Annotated[UploadData, Form(description="Upload")]
 OperationPath = Annotated[Operation, Path(description="Operation")]
 
 WeightQuery = Annotated[
-    float,
+    int,
     Query(
         description="Score calculation Weight",
         ge=1,
         le=100000,
-        decimal_places=3,
         examples=[5000],
     ),
 ]
