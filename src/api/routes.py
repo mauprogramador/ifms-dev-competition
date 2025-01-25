@@ -22,7 +22,6 @@ from src.common.params import (
 from src.core.config import LIMIT, LIMITER, LOG
 from src.repository import ReportRepository
 from src.core.use_cases import UseCases
-from src.repository.dynamic_repository import DynamicRepository
 
 router = APIRouter(prefix="/v2/ifms-dev-competition/api")
 
@@ -41,15 +40,17 @@ async def dynamic_lock_requests(
 
 
 @router.put(
-    "/set-weight",
+    "/{dynamic}/set-weight",
     status_code=HTTPStatus.OK,
     tags=["Admin"],
     summary="Sets the weight of the score calculation",
     response_model=SuccessResponse,
 )
-async def set_weight(request: Request, weight: WeightQuery) -> SuccessJSON:
-    LOG.debug({"weight": weight})
-    return await UseCases.set_weight(request, weight)
+async def set_weight(
+    request: Request, dynamic: DynamicPath, weight: WeightQuery
+) -> SuccessJSON:
+    LOG.debug({"dynamic": dynamic, "weight": weight})
+    return await UseCases.set_weight(request, dynamic, weight)
 
 
 @router.post(
@@ -196,10 +197,16 @@ async def upload_file(
     LOG.debug({"dynamic": dynamic, "form": form.model_dump()})
 
     response = await UseCases.upload_file(request, dynamic, form)
-    # diff = await UseCases.compare_to_answer_key(dynamic, form.code)
 
-    weight = DynamicRepository.get_weight(dynamic)
-    ReportRepository.add_report(dynamic, form, Operation.UPLOAD, None, weight)
+    try:
+        similarity = await UseCases.compare_to_answer_key(dynamic, form.code)
+    except Exception as error:
+        similarity = None
+
+        LOG.error("Failed to compare page to answer key")
+        LOG.exception(error)
+
+    ReportRepository.add_report(dynamic, form, Operation.UPLOAD, similarity)
 
     return response
 
