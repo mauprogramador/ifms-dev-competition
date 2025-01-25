@@ -14,7 +14,7 @@ async def lifespan(_: FastAPI):
 
     yield
 
-    LOG.info("\033[mStoping Web Driver and Multiprocess Pool")
+    LOG.info("\033[33mStoping Web Driver and Multiprocess Pool")
 
     WEB_DRIVER.quit()
 
