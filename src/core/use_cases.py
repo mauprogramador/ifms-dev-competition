@@ -26,7 +26,7 @@ from cv2 import (
 )
 
 from src.api.presenters import SuccessJSON
-from src.common.enums import LockStatus, WebFile
+from src.common.enums import LockStatus, FileType
 from src.common.params import (
     CreateNewDynamic,
     RetrieveData,
@@ -145,11 +145,11 @@ class UseCases:
 
         try:
             for code_dir in listdir(dynamic_dir):
-                index_path = join(dynamic_dir, code_dir, WebFile.HTML.value)
+                index_path = join(dynamic_dir, code_dir, FileType.HTML.file)
                 with open(index_path, mode="w", encoding="utf-8"):
                     pass
 
-                css_path = join(dynamic_dir, code_dir, WebFile.CSS.value)
+                css_path = join(dynamic_dir, code_dir, FileType.CSS.file)
                 with open(css_path, mode="w", encoding="utf-8"):
                     pass
 
@@ -226,11 +226,11 @@ class UseCases:
                 dir_path = join(dynamic_dir_path, dir_code)
                 makedirs(dir_path, exist_ok=True)
 
-                index_path = join(dir_path, WebFile.HTML.value)
+                index_path = join(dir_path, FileType.HTML.file)
                 with open(index_path, mode="w", encoding="utf-8"):
                     pass
 
-                css_path = join(dir_path, WebFile.CSS.value)
+                css_path = join(dir_path, FileType.CSS.file)
                 with open(css_path, mode="w", encoding="utf-8"):
                     pass
 
@@ -312,8 +312,8 @@ class UseCases:
         try:
             makedirs(dir_path, exist_ok=True)
 
-            for file in WebFile:
-                file_path = join(dir_path, file)
+            for file in FileType:
+                file_path = join(dir_path, file.file)
 
                 with open(file_path, mode="w", encoding="utf-8"):
                     pass
@@ -372,8 +372,7 @@ class UseCases:
                 f"Code dir {query.code} not found",
             )
 
-        filename = query.type.filename.value
-        file_path = join(code_dir_path, filename)
+        file_path = join(code_dir_path, query.type.file)
 
         try:
             with open(file_path, mode="r", encoding="utf-8") as file:
@@ -382,10 +381,10 @@ class UseCases:
         except Exception as error:
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Error in reading {filename}",
+                f"Error in reading {query.type.file}",
             ) from error
 
-        message = f"Retrieve code dir {query.code} {filename}"
+        message = f"Retrieve code dir {query.code} {query.type.file}"
         LOG.info(message)
 
         return SuccessJSON(
@@ -410,8 +409,7 @@ class UseCases:
                 HTTPStatus.NOT_FOUND, f"Code dir {form.code} not found"
             )
 
-        filename = form.type.filename.value
-        file_path = join(code_dir_path, filename)
+        file_path = join(code_dir_path, form.type.file)
 
         try:
             with open(file_path, mode="w", encoding="utf-8") as file:
@@ -420,10 +418,10 @@ class UseCases:
         except Exception as error:
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Error in writing {filename}",
+                f"Error in writing {form.type.file}",
             ) from error
 
-        message = f"Upload code dir {form.code} {filename}"
+        message = f"Upload code dir {form.code} {form.type.file}"
         LOG.info(message)
 
         return SuccessJSON(
@@ -483,7 +481,7 @@ class UseCases:
         code: str,
     ) -> float:
 
-        dynamic_dir = join(WEB_DIR, dynamic, code, WebFile.HTML)
+        dynamic_dir = join(WEB_DIR, dynamic, code, FileType.HTML.file)
         dynamic_dir_path = Path(dynamic_dir)
 
         if not dynamic_dir_path.exists():
