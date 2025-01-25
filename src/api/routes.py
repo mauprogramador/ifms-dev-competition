@@ -68,14 +68,27 @@ async def save_answer_key(
 
 
 @router.delete(
-    "/clean-all",
+    "/{dynamic}/clean-reports",
     status_code=HTTPStatus.OK,
     tags=["Admin"],
-    summary="Removes all test data",
+    summary="Removes a dynamic reports records",
     response_model=SuccessResponse,
 )
-async def clean_all(request: Request) -> SuccessJSON:
-    return await UseCases.clean_all(request)
+async def clean_reports(request: Request, dynamic: DynamicPath) -> SuccessJSON:
+    LOG.debug({"dynamic": dynamic})
+    return await UseCases.clean_reports(request, dynamic)
+
+
+@router.delete(
+    "/{dynamic}/clean-files",
+    status_code=HTTPStatus.OK,
+    tags=["Admin"],
+    summary="Empties all files of a dynamic",
+    response_model=SuccessResponse,
+)
+async def clean_files(request: Request, dynamic: DynamicPath) -> SuccessJSON:
+    LOG.debug({"dynamic": dynamic})
+    return await UseCases.clean_files(request, dynamic)
 
 
 @router.get(
