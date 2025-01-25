@@ -1,6 +1,7 @@
 from os import listdir
 from os.path import exists
 from secrets import token_hex
+# from multiprocessing import Pool
 
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
@@ -45,6 +46,8 @@ WEB_DRIVER = Chrome(
     service=Service(CHROME_DRIVER.install()),
     options=CHROME_OPTIONS,
 )
+
+# POOL = Pool(processes=6)
 
 HEADERS = [
     (

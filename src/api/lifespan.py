@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from src.core.config import WEB_DRIVER
+from src.core.config import LOG, WEB_DRIVER
 from src.repository import BaseRepository
 
 
@@ -14,4 +14,9 @@ async def lifespan(_: FastAPI):
 
     yield
 
+    LOG.info("\033[mStoping Web Driver and Multiprocess Pool")
+
     WEB_DRIVER.quit()
+
+    # POOL.close()
+    # POOL.join()

@@ -19,7 +19,7 @@ class BaseRepository:
                 cursor.execute(queries.CREATE_DYNAMIC_TABLE)
                 connection.commit()
 
-            LOG.info("Tables created successfully")
+            LOG.info("\033[33mTables created successfully")
 
         except OperationalError as error:
             LOG.exception(error)
