@@ -10,7 +10,7 @@ from src.api.lifespan import lifespan
 from src.api.middleware import TracingTimeExceptionHandlerMiddleware
 from src.api.presenters import ErrorResponse, SuccessResponse
 from src.api.routes import router
-from src.core.config import DEFAULT_LOCK, ENV, LIMITER, SECRET_KEY
+from src.core.config import ENV, LIMITER, SECRET_KEY
 from src.core.exception_handler import ExceptionHandler
 
 CONTACT = {
@@ -35,6 +35,10 @@ RESPONSES = {
         "model": ErrorResponse,
         "description": "JSON error response",
     },
+    HTTPStatus.UNPROCESSABLE_ENTITY: {
+        "model": ErrorResponse,
+        "description": "JSON error response",
+    },
 }
 
 app = FastAPI(
@@ -52,8 +56,6 @@ app = FastAPI(
 )
 
 app.state.limiter = LIMITER
-app.state.lock_requests = DEFAULT_LOCK
-app.state.weight = 5000
 
 app.add_middleware(TracingTimeExceptionHandlerMiddleware)
 
