@@ -17,39 +17,30 @@ from src.common.params import (
     OperationPath,
     TempFile,
     WeightQuery,
+    LockQuery,
 )
 from src.core.config import LIMIT, LIMITER, LOG
-from src.core.repository import Repository
+from src.repository import ReportRepository
 from src.core.use_cases import UseCases
+from src.repository.dynamic_repository import DynamicRepository
 
 router = APIRouter(prefix="/v2/ifms-dev-competition/api")
 
 
-@router.post(
-    "/lock-requests/{dynamic}",
+@router.put(
+    "/{dynamic}/lock-requests",
     status_code=HTTPStatus.OK,
     tags=["Admin"],
-    summary="Lock sending requests of a dynamic",
+    summary="Lock/Unlock sending requests of a dynamic",
     response_model=SuccessResponse,
 )
-async def lock_requests(request: Request, dynamic: DynamicPath) -> SuccessJSON:
-    return await UseCases.lock_requests(request, dynamic)
-
-
-@router.post(
-    "/unlock-requests/{dynamic}",
-    status_code=HTTPStatus.OK,
-    tags=["Admin"],
-    summary="Unlock sending requests of a dynamic",
-    response_model=SuccessResponse,
-)
-async def unlock_requests(
-    request: Request, dynamic: DynamicPath
+async def dynamic_lock_requests(
+    request: Request, dynamic: DynamicPath, lock_requests: LockQuery
 ) -> SuccessJSON:
-    return await UseCases.unlock_requests(request, dynamic)
+    return await UseCases.lock_requests(request, dynamic, lock_requests)
 
 
-@router.post(
+@router.put(
     "/set-weight",
     status_code=HTTPStatus.OK,
     tags=["Admin"],
@@ -184,7 +175,7 @@ async def retrieve_file(
     LOG.debug({"dynamic": dynamic, "query": query.model_dump()})
 
     response = await UseCases.retrieve_file(request, dynamic, query)
-    Repository.add_report(dynamic, query, Operation.RETRIEVE)
+    ReportRepository.add_report(dynamic, query, Operation.RETRIEVE)
 
     return response
 
@@ -205,10 +196,10 @@ async def upload_file(
     LOG.debug({"dynamic": dynamic, "form": form.model_dump()})
 
     response = await UseCases.upload_file(request, dynamic, form)
-    ssim = await UseCases.compare_to_answer_key(dynamic, form.code)
+    # diff = await UseCases.compare_to_answer_key(dynamic, form.code)
 
-    weight = request.app.state.weight
-    Repository.add_report(dynamic, form, Operation.UPLOAD, ssim, weight)
+    weight = DynamicRepository.get_weight(dynamic)
+    ReportRepository.add_report(dynamic, form, Operation.UPLOAD, None, weight)
 
     return response
 
@@ -239,7 +230,7 @@ async def dynamic_report(
     request: Request, dynamic: DynamicPath
 ) -> SuccessJSON:
     LOG.debug({"dynamic": dynamic})
-    return await Repository.get_dynamic_reports(request, dynamic)
+    return await ReportRepository.get_dynamic_reports(request, dynamic)
 
 
 @router.get(
@@ -254,7 +245,7 @@ async def file_report(
     request: Request, dynamic: DynamicPath, query: RetrieveFileQuery
 ) -> SuccessJSON:
     LOG.debug({"dynamic": dynamic, "query": query.model_dump()})
-    return await Repository.get_file_report(request, dynamic, query)
+    return await ReportRepository.get_file_report(request, dynamic, query)
 
 
 @router.get(
@@ -269,4 +260,6 @@ async def operation_report(
     request: Request, dynamic: DynamicPath, operation: OperationPath
 ) -> SuccessJSON:
     LOG.debug({"dynamic": dynamic, "operation": operation.name})
-    return await Repository.get_operation_reports(request, dynamic, operation)
+    return await ReportRepository.get_operation_reports(
+        request, dynamic, operation
+    )
