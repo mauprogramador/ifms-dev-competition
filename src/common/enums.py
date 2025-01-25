@@ -30,3 +30,13 @@ class Operation(StrEnum):
     RETRIEVE = "RETRIEVE"
     UPLOAD = "UPLOAD"
     ALL = "ALL"
+
+
+@unique
+class LockStatus(StrEnum):
+    LOCK = "LOCK"
+    UNLOCK = "UNLOCK"
+
+    @property
+    def boolean(self) -> int:
+        return 1 if self.name == "LOCK" else 0

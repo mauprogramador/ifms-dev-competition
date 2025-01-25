@@ -13,7 +13,7 @@ from fastapi import (
 )
 from pydantic import AfterValidator, BaseModel, Field, field_validator
 
-from src.common.enums import FileType, Operation
+from src.common.enums import FileType, LockStatus, Operation
 from src.common.patterns import CODE_PATTERN, DYNAMIC_PATTERN
 from src.repository.dynamic_repository import DynamicRepository
 from src.utils.formaters import format_code, format_dynamic
@@ -121,9 +121,9 @@ WeightQuery = Annotated[
 ]
 
 LockQuery = Annotated[
-    bool,
+    LockStatus,
     Query(
-        description="Lock/Unlock sending requests of a dynamic",
+        description="Lock/Unlock sending requests to a dynamic",
         examples=[False],
     ),
 ]

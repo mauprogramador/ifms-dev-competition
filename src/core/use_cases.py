@@ -26,7 +26,7 @@ from cv2 import (
 )
 
 from src.api.presenters import SuccessJSON
-from src.common.enums import WebFile
+from src.common.enums import LockStatus, WebFile
 from src.common.params import (
     CreateNewDynamic,
     RetrieveData,
@@ -51,17 +51,16 @@ class UseCases:
 
     @staticmethod
     async def lock_requests(
-        request: Request, dynamic: str, lock_requests: bool
+        request: Request, dynamic: str, lock_requests: LockStatus
     ) -> SuccessJSON:
-        lock = 1 if lock_requests else 0
-        DynamicRepository.set_lock_status(dynamic, lock)
+        DynamicRepository.set_lock_status(dynamic, lock_requests.boolean)
 
-        LOG.info(f"{dynamic} lock requests set to {lock_requests}")
+        LOG.info(f"{dynamic} lock requests set to {lock_requests.name}")
 
         return SuccessJSON(
             request,
-            f"{dynamic} lock request set to {lock_requests}",
-            {"lock_requests": lock_requests},
+            f"{dynamic} lock request set to {lock_requests.name}",
+            {"lock_requests": lock_requests.name},
         )
 
     @staticmethod
