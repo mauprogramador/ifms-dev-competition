@@ -15,7 +15,15 @@ from fastapi.responses import FileResponse
 from numpy import array, count_nonzero
 from numpy import sum as sum_array
 from PIL import Image
-from cv2 import COLOR_RGB2BGR, cvtColor, imread, imwrite, absdiff
+from cv2 import (
+    COLOR_RGB2BGR,
+    INTER_CUBIC,
+    cvtColor,
+    imread,
+    imwrite,
+    absdiff,
+    resize,
+)
 
 from src.api.presenters import SuccessJSON
 from src.common.enums import WebFile
@@ -57,16 +65,18 @@ class UseCases:
         )
 
     @staticmethod
-    async def set_weight(request: Request, weight: float) -> SuccessJSON:
+    async def set_weight(
+        request: Request, dynamic: str, weight: float
+    ) -> SuccessJSON:
         """Sets the weight of the score calculation"""
 
-        request.app.state.weight = weight
-        LOG.info(f"Weight state set to {weight}")
+        DynamicRepository.set_weight(dynamic, weight)
+        LOG.info(f"Score weight set to {weight}")
 
         return SuccessJSON(
             request,
-            f"Weight state set to {weight}",
-            {"weight": request.app.state.weight},
+            f"Score weight set to {weight}",
+            {"weight": weight},
         )
 
     @staticmethod
@@ -457,12 +467,13 @@ class UseCases:
             )
 
         width, height = DynamicRepository.get_size(dynamic)
-        WEB_DRIVER.set_window_size(width, height)
+        WEB_DRIVER.set_window_rect(0, 0, width, height)
+        WEB_DRIVER.maximize_window()
 
         try:
             WEB_DRIVER.get(dynamic_dir_path.absolute().as_uri())
             WEB_DRIVER.implicitly_wait(1)
-            print(WEB_DRIVER.get_window_size())
+
             screenshot = WEB_DRIVER.get_screenshot_as_png()
 
             img_dir = join(IMG_DIR, dynamic)
@@ -497,15 +508,18 @@ class UseCases:
             screenshot = cvtColor(array(screenshot_image), COLOR_RGB2BGR)
             answer_key = imread(answer_key_path)
 
-            print(answer_key.shape, screenshot.shape)
-            if answer_key.shape != screenshot.shape:
-                raise HTTPException(
-                    HTTPStatus.INTERNAL_SERVER_ERROR,
-                    "Answer-Key and screenshot have different dimensions",
+            if answer_key.shape != screenshot.shape:  # type: ignore
+                screenshot = resize(  # type: ignore
+                    screenshot,
+                    (width, height),
+                    interpolation=INTER_CUBIC,
+                )
+                LOG.error(
+                    "Answer-Key and screenshot have different dimensions"
                 )
 
             total_pixels = answer_key.shape[0] * answer_key.shape[1]
-            diff = absdiff(answer_key, screenshot_image)
+            diff = absdiff(answer_key, screenshot)  # type: ignore
 
             diff_path = join(IMG_DIR, dynamic, DIFF_FILENAME)
             imwrite(diff_path, diff)
@@ -513,15 +527,14 @@ class UseCases:
             num_diff_pixels = count_nonzero(sum_array(diff, 2))
             percentage_diff: float = (num_diff_pixels / total_pixels) * 100
 
+            similarity = 100.00 - percentage_diff
+
         except Exception as error:
-            raise error
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 f"Error in handling {dynamic} {code} images to compare",
             ) from error
 
-        LOG.info(
-            f"Similarity of {code} to the answer-key: {percentage_diff:.2f}"
-        )
+        LOG.info(f"Similarity of {code} to the answer-key: {similarity:.2f}")
 
-        return percentage_diff
+        return similarity
