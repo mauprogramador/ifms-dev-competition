@@ -9,13 +9,13 @@ from fastapi import (
     HTTPException,
     Path,
     Query,
-    Request,
     UploadFile,
 )
 from pydantic import AfterValidator, BaseModel, Field, field_validator
 
 from src.common.enums import FileType, Operation
 from src.common.patterns import CODE_PATTERN, DYNAMIC_PATTERN
+from src.repository.dynamic_repository import DynamicRepository
 from src.utils.formaters import format_code, format_dynamic
 
 
@@ -121,16 +121,17 @@ WeightQuery = Annotated[
     ),
 ]
 
+LockQuery = Annotated[
+    bool,
+    Query(
+        description="Lock/Unlock sending requests of a dynamic",
+        examples=[False],
+    ),
+]
 
-async def verify_lock(request: Request, dynamic: DynamicPath) -> None:
-    try:
-        lock_requests: bool = request.app.state.lock_requests[dynamic]
-    except KeyError as error:
-        raise HTTPException(
-            HTTPStatus.NOT_FOUND, f"Dynamic {dynamic} not found in State"
-        ) from error
 
-    if lock_requests:
+async def verify_lock(dynamic: DynamicPath) -> None:
+    if DynamicRepository.get_lock_status(dynamic):
         raise HTTPException(
             HTTPStatus.LOCKED, "Request sending has not started yet"
         )
