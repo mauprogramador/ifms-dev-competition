@@ -310,13 +310,15 @@ class UseCases:
         dir_path = join(dynamic_dir_path, dir_code)
 
         try:
-            makedirs(dir_path, exist_ok=True)
+            makedirs(dir_path, exist_ok=False)
 
-            for file in FileType:
-                file_path = join(dir_path, file.file)
+            index_path = join(dir_path, FileType.HTML.file)
+            with open(index_path, mode="w", encoding="utf-8"):
+                pass
 
-                with open(file_path, mode="w", encoding="utf-8"):
-                    pass
+            css_path = join(dir_path, FileType.CSS.file)
+            with open(css_path, mode="w", encoding="utf-8"):
+                pass
 
         except Exception as error:
             raise HTTPException(
