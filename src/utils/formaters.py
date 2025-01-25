@@ -16,17 +16,16 @@ def format_code(code: str) -> str:
 
 @lru_cache(maxsize=30)
 def format_dynamic_report(report: tuple) -> dict[str, Any]:
-    timestamp = datetime.fromtimestamp(report[6])
+    timestamp = datetime.fromtimestamp(report[5])
 
     return {
         "id": report[0],
         "code": report[2],
         "operation": report[3],
-        "type_in": report[4],
-        "type_out": report[5],
+        "file_type": report[4],
         "timestamp": timestamp.isoformat(),
-        "similarity": report[7],
-        "score": report[8],
+        "similarity": report[6],
+        "score": report[7],
     }
 
 
