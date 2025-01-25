@@ -10,7 +10,7 @@ CREATE_REPORT_TABLE = """
         score INTEGER NULL
     );
 """
-DELETE_ALL_REPORTS = "DELETE FROM Report;"
+DELETE_REPORTS = "DELETE FROM Report WHERE dynamic=?;"
 INSERT_REPORT = """
     INSERT INTO Report
         (dynamic,code,operation,file_type,timestamp,similarity,score)
@@ -56,7 +56,6 @@ CREATE_DYNAMIC_TABLE = """
         size TEXT NULL
     );
 """
-DELETE_ALL_DYNAMICS = "DELETE FROM Dynamic;"
 INSERT_DYNAMIC = """
     INSERT INTO Dynamic (dynamic,lock_requests,weight) VALUES (?, ?, ?);
 """
