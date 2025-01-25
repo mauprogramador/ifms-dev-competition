@@ -17,11 +17,13 @@ APP = "src.api.main:app"
 WEB_DIR = "web"
 IMG_DIR = "images"
 
+DEFAULT_WEIGHT = 5000
 DEFAULT_LOCK = (
     {dynamic: True for dynamic in listdir(WEB_DIR)} if exists(WEB_DIR) else {}
 )
 
 ANSWER_KEY_FILENAME = "answer_key.png"
+DIFF_FILENAME = "diff.png"
 
 SECRET_KEY = token_hex(nbytes=16)
 

@@ -4,13 +4,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from src.core.config import WEB_DRIVER
-from src.core.repository import Repository
+from src.repository import BaseRepository
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
 
-    Repository.create_table()
+    BaseRepository.create_tables()
 
     yield
 
