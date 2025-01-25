@@ -476,7 +476,7 @@ class UseCases:
             ) from error
 
     @staticmethod
-    async def compare_to_answer_key(
+    async def compare_similarity(
         dynamic: str,
         code: str,
     ) -> float:

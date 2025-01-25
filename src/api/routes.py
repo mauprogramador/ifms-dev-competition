@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 from fastapi.routing import APIRouter
 
 from src.api.presenters import SuccessJSON, SuccessResponse
-from src.common.enums import Operation
+from src.common.enums import FileType, Operation
 from src.common.params import (
     AnswerKeyFile,
     CodePath,
@@ -210,14 +210,14 @@ async def upload_file(
     LOG.debug({"dynamic": dynamic, "form": form.model_dump()})
 
     response = await UseCases.upload_file(request, dynamic, form)
+    similarity = None
 
-    try:
-        similarity = await UseCases.compare_to_answer_key(dynamic, form.code)
-    except Exception as error:
-        similarity = None
-
-        LOG.error("Failed to compare page to answer key")
-        LOG.exception(error)
+    if form.type == FileType.CSS:
+        try:
+            similarity = await UseCases.compare_similarity(dynamic, form.code)
+        except Exception as error:  # pylint: disable=W0718
+            LOG.error("Failed to compare page to answer key")
+            LOG.exception(error)
 
     ReportRepository.add_report(dynamic, form, Operation.UPLOAD, similarity)
 
