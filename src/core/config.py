@@ -25,6 +25,7 @@ DEFAULT_LOCK = (
 
 ANSWER_KEY_FILENAME = "answer_key.png"
 DIFF_FILENAME = "diff.png"
+SCREENSHOT_FILENAME = "screenshot.png"
 
 SECRET_KEY = token_hex(nbytes=16)
 
