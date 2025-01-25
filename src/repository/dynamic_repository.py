@@ -35,12 +35,12 @@ class DynamicRepository:
                 cursor.execute(queries.DELETE_DYNAMIC, (dynamic,))
                 connection.commit()
 
-            LOG.info("Dynamic added successfully")
+            LOG.info("Dynamic removed successfully")
 
         except OperationalError as error:
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Failed saving {dynamic} dynamic",
+                f"Failed removing {dynamic} dynamic",
             ) from error
 
     @classmethod
