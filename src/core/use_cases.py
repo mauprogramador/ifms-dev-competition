@@ -134,7 +134,7 @@ class UseCases:
             ) from error
 
         try:
-            timestamp = strftime("%Y-%m-%d_%H%-M-%S")
+            timestamp = strftime("%Y-%m-%d_%H-%M-%S")
             file = splitext(ENV.database_file)
 
             backup_file = f"{file[0]}_{timestamp}{file[1]}"
