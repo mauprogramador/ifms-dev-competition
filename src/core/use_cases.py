@@ -51,8 +51,6 @@ class UseCases:
     async def lock_requests(
         request: Request, dynamic: str, lock_requests: bool
     ) -> SuccessJSON:
-        """Lock/Unlock sending requests of a dynamic"""
-
         lock = 1 if lock_requests else 0
         DynamicRepository.set_lock_status(dynamic, lock)
 
@@ -68,8 +66,6 @@ class UseCases:
     async def set_weight(
         request: Request, dynamic: str, weight: int
     ) -> SuccessJSON:
-        """Sets the weight of the score calculation"""
-
         DynamicRepository.set_weight(dynamic, weight)
         LOG.info(f"Score weight set to {weight}")
 
@@ -83,8 +79,6 @@ class UseCases:
     async def save_answer_key(
         request: Request, dynamic: str, file: UploadFile
     ) -> SuccessJSON:
-        """Saves a dynamic answer key image"""
-
         try:
             makedirs(IMG_DIR, exist_ok=True)
             dynamic_dir = join(IMG_DIR, dynamic)
@@ -113,8 +107,6 @@ class UseCases:
 
     @staticmethod
     async def clean_all(request: Request) -> SuccessJSON:
-        """Removes all test data"""
-
         try:
             for dynamic_dir in listdir(WEB_DIR):
                 rmtree(join(WEB_DIR, dynamic_dir))
@@ -156,8 +148,6 @@ class UseCases:
 
     @staticmethod
     async def list_dynamics(request: Request) -> SuccessJSON:
-        """Lists all Dynamics and its teams code dirs"""
-
         dynamic_dirs = listdir(WEB_DIR)
         LOG.info(f"There was {len(dynamic_dirs)} dynamics")
 
@@ -171,8 +161,6 @@ class UseCases:
     async def add_dynamic(
         request: Request, form: CreateNewDynamic
     ) -> SuccessJSON:
-        """Adds a new Dynamic and its teams code dirs"""
-
         try:
             dynamic_dir_path = join(WEB_DIR, form.name)
             makedirs(dynamic_dir_path, exist_ok=True)
@@ -217,8 +205,6 @@ class UseCases:
 
     @staticmethod
     async def remove_dynamic(request: Request, dynamic: str) -> SuccessJSON:
-        """Removes a Dynamic and its teams code dirs"""
-
         dynamic_dir_path = join(WEB_DIR, dynamic)
 
         if not exists(dynamic_dir_path):
@@ -246,8 +232,6 @@ class UseCases:
 
     @staticmethod
     async def list_code_dirs(request: Request, dynamic: str) -> SuccessJSON:
-        """List a dynamic code dirs"""
-
         dynamic_dir_path = join(WEB_DIR, dynamic)
 
         if not exists(dynamic_dir_path):
@@ -268,8 +252,6 @@ class UseCases:
 
     @staticmethod
     async def add_code_dir(request: Request, dynamic: str) -> SuccessJSON:
-        """Add a dynamic new code dir"""
-
         dynamic_dir_path = join(WEB_DIR, dynamic)
 
         dir_code = "".join(sample(ascii_uppercase, k=4))
@@ -302,8 +284,6 @@ class UseCases:
     async def remove_code_dir(
         request: Request, dynamic: str, code: str
     ) -> SuccessJSON:
-        """Remove a dynamic code dir"""
-
         dynamic_dir_path = join(WEB_DIR, dynamic, code)
 
         if not exists(dynamic_dir_path):
@@ -332,8 +312,6 @@ class UseCases:
     async def retrieve_file(
         request: Request, dynamic: str, query: RetrieveData
     ) -> SuccessJSON:
-        """Retrieves a code dir file"""
-
         code_dir_path = join(WEB_DIR, dynamic, query.code)
 
         if not exists(code_dir_path):
@@ -373,8 +351,6 @@ class UseCases:
     async def upload_file(
         request: Request, dynamic: str, form: UploadData
     ) -> SuccessJSON:
-        """Uploads a code dir file"""
-
         code_dir_path = join(WEB_DIR, dynamic, form.code)
 
         if not exists(code_dir_path):
@@ -412,8 +388,6 @@ class UseCases:
     async def download_dir_tree(
         dynamic: str, temp_file: _TemporaryFileWrapper
     ) -> FileResponse:
-        """Downloads a dynamic dir tree"""
-
         try:
             with ZipFile(
                 temp_file,
