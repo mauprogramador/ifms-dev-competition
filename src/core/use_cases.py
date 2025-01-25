@@ -1,6 +1,6 @@
 from http import HTTPStatus
 from io import BytesIO
-from os import listdir, makedirs
+from os import listdir, makedirs, remove
 from os.path import exists, join, splitext
 from pathlib import Path
 from random import sample
@@ -38,10 +38,12 @@ from src.core.config import (
     ENV,
     IMG_DIR,
     LOG,
+    SCREENSHOT_FILENAME,
     WEB_DIR,
     WEB_DRIVER,
 )
-from src.repository import BaseRepository, DynamicRepository
+from src.repository import DynamicRepository
+from src.repository.report_repository import ReportRepository
 
 
 class UseCases:
@@ -106,25 +108,7 @@ class UseCases:
         )
 
     @staticmethod
-    async def clean_all(request: Request) -> SuccessJSON:
-        try:
-            for dynamic_dir in listdir(WEB_DIR):
-                rmtree(join(WEB_DIR, dynamic_dir))
-        except OSError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Error in cleaning {WEB_DIR} dir",
-            ) from error
-
-        try:
-            for image_dir in listdir(IMG_DIR):
-                rmtree(join(IMG_DIR, image_dir))
-        except OSError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Error in cleaning {IMG_DIR} dir",
-            ) from error
-
+    async def clean_reports(request: Request, dynamic: str) -> SuccessJSON:
         try:
             timestamp = strftime("%Y-%m-%d_%H-%M-%S")
             file = splitext(ENV.database_file)
@@ -132,7 +116,7 @@ class UseCases:
             backup_file = f"{file[0]}_{timestamp}{file[1]}"
             copy2(ENV.database_file, backup_file)
 
-            BaseRepository.clean_tables()
+            ReportRepository.clean_reports(dynamic)
 
             LOG.info("Database file backup created successfully")
 
@@ -142,9 +126,69 @@ class UseCases:
                 "Error in making the database file backup",
             ) from error
 
-        LOG.info("All test data has been removed")
+        LOG.info(f"{dynamic} dynamic reports records removed")
 
-        return SuccessJSON(request, "All test data has been removed")
+        return SuccessJSON(
+            request,
+            f"{dynamic} dynamic reports records removed",
+            {"dynamic": dynamic, "backup_file": backup_file},
+        )
+
+    @staticmethod
+    async def clean_files(request: Request, dynamic: str) -> SuccessJSON:
+        dynamic_dir = join(WEB_DIR, dynamic)
+
+        if not exists(dynamic_dir):
+            raise HTTPException(
+                HTTPStatus.NOT_FOUND, f"{dynamic} dynamic WEB dir not found"
+            )
+
+        try:
+            for code_dir in listdir(dynamic_dir):
+                index_path = join(dynamic_dir, code_dir, WebFile.HTML.value)
+                with open(index_path, mode="w", encoding="utf-8"):
+                    pass
+
+                css_path = join(dynamic_dir, code_dir, WebFile.CSS.value)
+                with open(css_path, mode="w", encoding="utf-8"):
+                    pass
+
+        except OSError as error:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Error in cleaning {dynamic} dynamic WEB code dirs",
+            ) from error
+
+        dynamic_dir = join(IMG_DIR, dynamic)
+
+        if not exists(dynamic_dir):
+            LOG.info(f"{dynamic} dynamic files cleaned")
+            LOG.error(f"{dynamic} dynamic IMG dir not found")
+
+            return SuccessJSON(request, f"{dynamic} dynamic files cleaned")
+
+        try:
+            for code_dir in listdir(dynamic_dir):
+                diff_dir = join(dynamic_dir, code_dir, DIFF_FILENAME)
+                if exists(diff_dir):
+                    remove(diff_dir)
+                screenshot_dir = join(
+                    dynamic_dir, code_dir, SCREENSHOT_FILENAME
+                )
+                if exists(screenshot_dir):
+                    remove(screenshot_dir)
+
+        except OSError as error:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Error in cleaning {dynamic} dynamic IMG code dirs",
+            ) from error
+
+        LOG.info(f"{dynamic} dynamic files cleaned and images removed")
+
+        return SuccessJSON(
+            request, f"{dynamic} dynamic files cleaned and images removed"
+        )
 
     @staticmethod
     async def list_dynamics(request: Request) -> SuccessJSON:
@@ -181,11 +225,13 @@ class UseCases:
                 dir_path = join(dynamic_dir_path, dir_code)
                 makedirs(dir_path, exist_ok=True)
 
-                for file in WebFile:
-                    file_path = join(dir_path, file)
+                index_path = join(dir_path, WebFile.HTML.value)
+                with open(index_path, mode="w", encoding="utf-8"):
+                    pass
 
-                    with open(file_path, mode="w", encoding="utf-8"):
-                        pass
+                css_path = join(dir_path, WebFile.CSS.value)
+                with open(css_path, mode="w", encoding="utf-8"):
+                    pass
 
             DynamicRepository.add_dynamic(form.name)
             LOG.info(f"Dynamic {form.name} has {count} code dirs created")
@@ -222,6 +268,11 @@ class UseCases:
             ) from error
 
         DynamicRepository.remove_dynamic(dynamic)
+        dynamic_dir_path = join(IMG_DIR, dynamic)
+
+        if exists(dynamic_dir_path):
+            rmtree(dynamic_dir_path)
+
         LOG.info(f"Dynamic {dynamic} removed")
 
         return SuccessJSON(
@@ -447,14 +498,11 @@ class UseCases:
         try:
             WEB_DRIVER.get(dynamic_dir_path.absolute().as_uri())
             WEB_DRIVER.implicitly_wait(1)
-
             screenshot = WEB_DRIVER.get_screenshot_as_png()
 
-            img_dir = join(IMG_DIR, dynamic)
+            img_dir = join(IMG_DIR, dynamic, code)
             makedirs(img_dir, exist_ok=True)
-
-            filename = f"{code.lower()}_screenshot.png"
-            file_path = join(img_dir, filename)
+            file_path = join(img_dir, SCREENSHOT_FILENAME)
 
             screenshot_image = Image.open(BytesIO(screenshot))
             screenshot_image.save(file_path, format="PNG")
@@ -495,7 +543,7 @@ class UseCases:
             total_pixels = answer_key.shape[0] * answer_key.shape[1]
             diff = absdiff(answer_key, screenshot)  # type: ignore
 
-            diff_path = join(IMG_DIR, dynamic, DIFF_FILENAME)
+            diff_path = join(IMG_DIR, dynamic, code, DIFF_FILENAME)
             imwrite(diff_path, diff)
 
             num_diff_pixels = count_nonzero(sum_array(diff, 2))
