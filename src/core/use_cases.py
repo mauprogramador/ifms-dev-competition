@@ -234,14 +234,14 @@ class UseCases:
                 with open(css_path, mode="w", encoding="utf-8"):
                     pass
 
-            DynamicRepository.add_dynamic(form.name)
-            LOG.info(f"Dynamic {form.name} has {count} code dirs created")
-
         except Exception as error:
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 f"Error in creating {form.name} code dirs",
             ) from error
+
+        DynamicRepository.add_dynamic(form.name)
+        LOG.info(f"Dynamic {form.name} has {count} code dirs created")
 
         return SuccessJSON(
             request,
