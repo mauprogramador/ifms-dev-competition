@@ -61,6 +61,22 @@ class ReportRepository:
             ) from error
 
     @classmethod
+    def clean_reports(cls, dynamic: str) -> None:
+        try:
+            with connect(cls.__DATABASE) as connection:
+                cursor = connection.cursor()
+                cursor.execute(queries.DELETE_REPORTS, (dynamic,))
+                connection.commit()
+
+            LOG.info(f"{dynamic} reports removed")
+
+        except OperationalError as error:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                f"Failed removing {dynamic} reports",
+            ) from error
+
+    @classmethod
     async def get_dynamic_reports(
         cls, request: Request, dynamic: str
     ) -> SuccessJSON:
