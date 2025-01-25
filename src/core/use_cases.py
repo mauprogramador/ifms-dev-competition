@@ -12,9 +12,10 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 from fastapi import HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
-from numpy import array
+from numpy import array, count_nonzero
+from numpy import sum as sum_array
 from PIL import Image
-from skimage.metrics import structural_similarity
+from cv2 import COLOR_RGB2BGR, cvtColor, imread, imwrite, absdiff
 
 from src.api.presenters import SuccessJSON
 from src.common.enums import WebFile
@@ -25,55 +26,33 @@ from src.common.params import (
 )
 from src.core.config import (
     ANSWER_KEY_FILENAME,
+    DIFF_FILENAME,
     ENV,
     IMG_DIR,
     LOG,
     WEB_DIR,
     WEB_DRIVER,
 )
-from src.core.repository import Repository
+from src.repository import BaseRepository, DynamicRepository
 
 
 class UseCases:
     """Handles all request processing"""
 
     @staticmethod
-    async def lock_requests(request: Request, dynamic: str) -> SuccessJSON:
-        """Lock sending requests of a dynamic"""
+    async def lock_requests(
+        request: Request, dynamic: str, lock_requests: bool
+    ) -> SuccessJSON:
+        """Lock/Unlock sending requests of a dynamic"""
 
-        try:
-            request.app.state.lock_requests[dynamic] = True
-        except KeyError as error:
-            raise HTTPException(
-                HTTPStatus.NOT_FOUND, f"Dynamic {dynamic} not found in State"
-            ) from error
+        lock = 1 if lock_requests else 0
+        DynamicRepository.set_lock_status(dynamic, lock)
 
-        lock_requests = request.app.state.lock_requests[dynamic]
-        LOG.info(f"{dynamic} requests locked. State set to {lock_requests}")
+        LOG.info(f"{dynamic} lock requests set to {lock_requests}")
 
         return SuccessJSON(
             request,
-            f"{dynamic} requests locked. State set to {lock_requests}",
-            {"lock_requests": lock_requests},
-        )
-
-    @staticmethod
-    async def unlock_requests(request: Request, dynamic: str) -> SuccessJSON:
-        """Unlock sending requests of a dynamic"""
-
-        try:
-            request.app.state.lock_requests[dynamic] = False
-        except KeyError as error:
-            raise HTTPException(
-                HTTPStatus.NOT_FOUND, f"Dynamic {dynamic} not found in State"
-            ) from error
-
-        lock_requests = request.app.state.lock_requests[dynamic]
-        LOG.info(f"{dynamic} requests unlocked. State set to {lock_requests}")
-
-        return SuccessJSON(
-            request,
-            f"{dynamic} requests unlocked. State set to {lock_requests}",
+            f"{dynamic} lock request set to {lock_requests}",
             {"lock_requests": lock_requests},
         )
 
@@ -107,7 +86,7 @@ class UseCases:
             image = Image.open(BytesIO(content))
             image.save(file_path, format="PNG")
 
-            WEB_DRIVER.set_window_size(image.width, image.height)
+            DynamicRepository.set_size(dynamic, image.size)
 
             LOG.info(f"Answer-Key image {image.size} saved in PNG")
 
@@ -151,8 +130,7 @@ class UseCases:
             backup_file = f"{file[0]}_{timestamp}{file[1]}"
             copy2(ENV.database_file, backup_file)
 
-            Repository.clean_table()
-            request.app.state.lock_requests = {}
+            BaseRepository.clean_tables()
 
             LOG.info("Database file backup created successfully")
 
@@ -211,7 +189,7 @@ class UseCases:
                     with open(file_path, mode="w", encoding="utf-8"):
                         pass
 
-            request.app.state.lock_requests.setdefault(form.name, True)
+            DynamicRepository.add_dynamic(form.name)
             LOG.info(f"Dynamic {form.name} has {count} code dirs created")
 
         except Exception as error:
@@ -247,6 +225,7 @@ class UseCases:
                 f"Error in removing dynamic dir {dynamic}",
             ) from error
 
+        DynamicRepository.remove_dynamic(dynamic)
         LOG.info(f"Dynamic {dynamic} removed")
 
         return SuccessJSON(
@@ -477,9 +456,13 @@ class UseCases:
                 f"Index.html not found in {dynamic} {code} code dir",
             )
 
+        width, height = DynamicRepository.get_size(dynamic)
+        WEB_DRIVER.set_window_size(width, height)
+
         try:
             WEB_DRIVER.get(dynamic_dir_path.absolute().as_uri())
             WEB_DRIVER.implicitly_wait(1)
+            print(WEB_DRIVER.get_window_size())
             screenshot = WEB_DRIVER.get_screenshot_as_png()
 
             img_dir = join(IMG_DIR, dynamic)
@@ -511,32 +494,34 @@ class UseCases:
             )
 
         try:
-            screenshot_image = screenshot_image.convert("L")
-            answer_key_image = Image.open(answer_key_path).convert("L")
+            screenshot = cvtColor(array(screenshot_image), COLOR_RGB2BGR)
+            answer_key = imread(answer_key_path)
 
-            if answer_key_image.size != screenshot_image.size:
-                answer_key_image = answer_key_image.resize(
-                    screenshot_image.size
+            print(answer_key.shape, screenshot.shape)
+            if answer_key.shape != screenshot.shape:
+                raise HTTPException(
+                    HTTPStatus.INTERNAL_SERVER_ERROR,
+                    "Answer-Key and screenshot have different dimensions",
                 )
-                answer_key_image.save(answer_key_path)
 
-            ssim: float = structural_similarity(
-                im1=array(answer_key_image),
-                im2=array(screenshot_image),
-                data_range=1.0,
-                gaussian_weights=True,
-                sigma=1.5,
-                multichannel=True,
-                use_sample_covariance=False,
-            )
+            total_pixels = answer_key.shape[0] * answer_key.shape[1]
+            diff = absdiff(answer_key, screenshot_image)
+
+            diff_path = join(IMG_DIR, dynamic, DIFF_FILENAME)
+            imwrite(diff_path, diff)
+
+            num_diff_pixels = count_nonzero(sum_array(diff, 2))
+            percentage_diff: float = (num_diff_pixels / total_pixels) * 100
+
         except Exception as error:
-            LOG.error(f"Error in handling {dynamic} {code} images to compare")
-
+            raise error
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 f"Error in handling {dynamic} {code} images to compare",
             ) from error
 
-        LOG.info(f"Similarity of {code} to the answer-key: {ssim:.3f}")
+        LOG.info(
+            f"Similarity of {code} to the answer-key: {percentage_diff:.2f}"
+        )
 
-        return ssim
+        return percentage_diff
