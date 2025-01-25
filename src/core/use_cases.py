@@ -115,6 +115,7 @@ class UseCases:
             backup_file = f"{file[0]}_{timestamp}{file[1]}"
             copy2(ENV.database_file, backup_file)
 
+            LOG.debug({"backup_file": backup_file})
             ReportRepository.clean_reports(dynamic)
 
             LOG.info("Database file backup created successfully")
@@ -210,6 +211,7 @@ class UseCases:
 
             dirs_count = len(listdir(dynamic_dir_path))
             count = form.teams_number - dirs_count
+            LOG.debug({"count": count})
 
             if count <= 0:
                 LOG.info(f"Dynamic dir {dynamic_dir_path} already exists")
@@ -491,6 +493,8 @@ class UseCases:
             )
 
         width, height = DynamicRepository.get_size(dynamic)
+        LOG.debug({"answer_key_size": (width, height)})
+
         WEB_DRIVER.set_window_rect(0, 0, width, height)
         WEB_DRIVER.maximize_window()
 
@@ -504,6 +508,7 @@ class UseCases:
             file_path = join(img_dir, SCREENSHOT_FILENAME)
 
             screenshot_image = Image.open(BytesIO(screenshot))
+            LOG.debug({"screenshot_size": screenshot_image.size})
             screenshot_image.save(file_path, format="PNG")
 
         except Exception as error:
@@ -529,6 +534,13 @@ class UseCases:
             screenshot = cvtColor(array(screenshot_image), COLOR_RGB2BGR)
             answer_key = imread(answer_key_path)
 
+            LOG.debug(
+                {
+                    "answer_key_shape": answer_key.shape,
+                    "screenshot_shape": screenshot.shape,  # type: ignore
+                }
+            )
+
             if answer_key.shape != screenshot.shape:  # type: ignore
                 screenshot = resize(  # type: ignore
                     screenshot,
@@ -547,6 +559,13 @@ class UseCases:
 
             num_diff_pixels = count_nonzero(sum_array(diff, 2))
             percentage_diff: float = (num_diff_pixels / total_pixels) * 100
+
+            LOG.debug(
+                {
+                    "total_pixels": total_pixels,
+                    "num_diff_pixels": num_diff_pixels,
+                }
+            )
 
             similarity = 100.00 - percentage_diff
 

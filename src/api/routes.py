@@ -36,6 +36,7 @@ router = APIRouter(prefix="/v2/ifms-dev-competition/api")
 async def dynamic_lock_requests(
     request: Request, dynamic: DynamicPath, lock_requests: LockQuery
 ) -> SuccessJSON:
+    LOG.debug({"dynamic": dynamic, "lock_requests": lock_requests.value})
     return await UseCases.lock_requests(request, dynamic, lock_requests)
 
 
@@ -63,7 +64,13 @@ async def set_weight(
 async def save_answer_key(
     request: Request, dynamic: DynamicPath, file: AnswerKeyFile
 ) -> SuccessJSON:
-    LOG.debug({"dynamic": dynamic, "filename": file.filename})
+    LOG.debug(
+        {
+            "dynamic": dynamic,
+            "filename": file.filename,
+            "content_type": file.content_type,
+        }
+    )
     return await UseCases.save_answer_key(request, dynamic, file)
 
 
@@ -234,7 +241,7 @@ async def upload_file(
 async def download_dir_tree(
     dynamic: DynamicPath, temp_file: TempFile
 ) -> FileResponse:
-    LOG.debug({"dynamic": dynamic})
+    LOG.debug({"dynamic": dynamic, "temp_file": temp_file.name})
     return await UseCases.download_dir_tree(dynamic, temp_file)
 
 
@@ -279,7 +286,7 @@ async def file_report(
 async def operation_report(
     request: Request, dynamic: DynamicPath, operation: OperationPath
 ) -> SuccessJSON:
-    LOG.debug({"dynamic": dynamic, "operation": operation.name})
+    LOG.debug({"dynamic": dynamic, "operation": operation.value})
     return await ReportRepository.get_operation_reports(
         request, dynamic, operation
     )
