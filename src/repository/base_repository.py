@@ -1,4 +1,4 @@
-from sqlite3 import OperationalError, connect
+from sqlite3 import Error, connect
 
 from src.core.config import ENV, LOG
 from src.repository import queries
@@ -18,6 +18,7 @@ class BaseRepository:
 
             LOG.info("\033[33mTables created successfully")
 
-        except OperationalError as error:
+        except Error as error:
+            LOG.error("Failed to create tables")
             LOG.exception(error)
-            raise OperationalError("Failed to create tables") from error
+            raise Error("Failed to create tables") from error

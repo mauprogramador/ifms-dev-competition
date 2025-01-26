@@ -1,8 +1,9 @@
 from http import HTTPStatus
-from sqlite3 import OperationalError, connect
+from sqlite3 import Error, connect
 
 from fastapi import HTTPException
 
+from src.api.presenters import HTTPError
 from src.core.config import DEFAULT_WEIGHT, ENV, LOG
 from src.repository import queries
 
@@ -21,10 +22,9 @@ class DynamicRepository:
 
             LOG.info(f"{dynamic} dynamic added successfully")
 
-        except OperationalError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Failed saving {dynamic} dynamic",
+        except Error as error:
+            raise HTTPError(
+                f"Failed saving {dynamic} dynamic", error=error
             ) from error
 
     @classmethod
@@ -37,10 +37,9 @@ class DynamicRepository:
 
             LOG.info("Dynamic removed successfully")
 
-        except OperationalError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Failed removing {dynamic} dynamic",
+        except Error as error:
+            raise HTTPError(
+                f"Failed removing {dynamic} dynamic", error=error
             ) from error
 
     @classmethod
@@ -52,10 +51,9 @@ class DynamicRepository:
                 lock = cursor.fetchone()
                 connection.commit()
 
-        except OperationalError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Failed getting {dynamic} lock status",
+        except Error as error:
+            raise HTTPError(
+                f"Failed getting {dynamic} lock status", error=error
             ) from error
 
         LOG.info(f"Dynamic {dynamic} lock status found")
@@ -75,10 +73,10 @@ class DynamicRepository:
                 cursor.execute(queries.UPDATE_LOCK_STATUS, (lock, dynamic))
                 connection.commit()
 
-        except OperationalError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
+        except Error as error:
+            raise HTTPError(
                 f"Failed setting lock status for {dynamic} dynamic",
+                error=error,
             ) from error
 
     @classmethod
@@ -90,10 +88,9 @@ class DynamicRepository:
                 dimensions = cursor.fetchone()
                 connection.commit()
 
-        except OperationalError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Failed getting {dynamic} weight",
+        except Error as error:
+            raise HTTPError(
+                f"Failed getting {dynamic} weight", error=error
             ) from error
 
         LOG.info(f"Dynamic {dynamic} weight found")
@@ -116,11 +113,11 @@ class DynamicRepository:
                 cursor.execute(queries.UPDATE_SIZE, (dimensions, dynamic))
                 connection.commit()
 
-        except OperationalError as error:
+        except Error as error:
             LOG.exception(error)
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
+            raise HTTPError(
                 f"Failed setting answer-key size for {dynamic} dynamic",
+                error=error,
             ) from error
 
     @classmethod
@@ -132,10 +129,9 @@ class DynamicRepository:
                 weight = cursor.fetchone()
                 connection.commit()
 
-        except OperationalError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Failed getting {dynamic} weight",
+        except Error as error:
+            raise HTTPError(
+                f"Failed getting {dynamic} weight", error=error
             ) from error
 
         LOG.info(f"Dynamic {dynamic} weight found")
@@ -155,8 +151,7 @@ class DynamicRepository:
                 cursor.execute(queries.UPDATE_WEIGHT, (weight, dynamic))
                 connection.commit()
 
-        except OperationalError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Failed setting weight for {dynamic} dynamic",
+        except Error as error:
+            raise HTTPError(
+                f"Failed setting weight for {dynamic} dynamic", error=error
             ) from error

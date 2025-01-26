@@ -1,10 +1,10 @@
 from http import HTTPStatus
-from sqlite3 import OperationalError, connect
+from sqlite3 import Error, connect
 from time import time
 
 from fastapi import HTTPException, Request
 
-from src.api.presenters import SuccessJSON
+from src.api.presenters import HTTPError, SuccessJSON
 from src.common.enums import Operation
 from src.common.params import RetrieveData, UploadData
 from src.core.config import ENV, LOG
@@ -54,11 +54,9 @@ class ReportRepository:
 
             LOG.info("Report added successfully")
 
-        except OperationalError as error:
+        except Error as error:
             LOG.exception(error)
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR, "Failed saving report"
-            ) from error
+            raise HTTPError("Failed saving report", error=error) from error
 
     @classmethod
     def clean_reports(cls, dynamic: str) -> None:
@@ -70,10 +68,9 @@ class ReportRepository:
 
             LOG.info(f"{dynamic} reports removed")
 
-        except OperationalError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Failed removing {dynamic} reports",
+        except Error as error:
+            raise HTTPError(
+                f"Failed removing {dynamic} reports", error=error
             ) from error
 
     @classmethod
@@ -86,10 +83,9 @@ class ReportRepository:
                 cursor.execute(queries.SELECT_DYNAMIC_REPORT, (dynamic,))
                 reports = cursor.fetchall()
 
-        except OperationalError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Failed getting {dynamic} report",
+        except Error as error:
+            raise HTTPError(
+                f"Failed getting {dynamic} report", error=error
             ) from error
 
         LOG.info(f"{dynamic} reports found")
@@ -124,10 +120,10 @@ class ReportRepository:
                 cursor.execute(queries.SELECT_FILE_REPORT, params)
                 report = cursor.fetchone()
 
-        except OperationalError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
+        except Error as error:
+            raise HTTPError(
                 f"Failed getting {query.code} {query.type.value} file report",
+                error=error,
             ) from error
 
         LOG.info(f"{query.code} {query.type.value} file report found")
@@ -168,10 +164,10 @@ class ReportRepository:
                 cursor.execute(sql, params)
                 reports = cursor.fetchall()
 
-        except OperationalError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
+        except Error as error:
+            raise HTTPError(
                 f"Failed getting {operation.value} operation report",
+                error=error,
             ) from error
 
         LOG.info(f"{operation.value} operation reports found")
