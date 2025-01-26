@@ -10,7 +10,7 @@ from pydantic_core import ValidationError
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from src.api.presenters import ErrorJSON
+from src.api.presenters import ErrorJSON, HTTPError
 from src.core.config import ERROR_MESSAGE, LOG
 from src.utils.formaters import format_error
 
@@ -21,6 +21,7 @@ class ExceptionHandler:
     @property
     def handlers(self) -> dict:
         return {
+            HTTPError: self.custom_http_error,
             StarletteHTTPException: self.starlette_http_exception,
             HTTPException: self.starlette_http_exception,
             RequestValidationError: self.request_validation_error,
@@ -28,6 +29,17 @@ class ExceptionHandler:
             ValidationError: self.validation_error,
             RateLimitExceeded: self.rate_limit_error,
         }
+
+    async def custom_http_error(
+        self, request: Request, exc: HTTPError
+    ) -> ErrorJSON:
+        LOG.error(exc.detail)
+        return ErrorJSON(
+            request,
+            exc.status_code,
+            format_error(exc, exc.detail),
+            exc.errors,
+        )
 
     async def starlette_http_exception(
         self, request: Request, exc: StarletteHTTPException | HTTPException
