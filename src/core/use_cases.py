@@ -33,7 +33,7 @@ from numpy import sum as np_sum
 from numpy import uint8
 from PIL import Image
 
-from src.api.presenters import SuccessJSON
+from src.api.presenters import HTTPError, SuccessJSON
 from src.common.enums import FileType, LockStatus
 from src.common.params import CreateNewDynamic, RetrieveData, UploadData
 from src.core.config import (
@@ -46,8 +46,7 @@ from src.core.config import (
     WEB_DIR,
     WEB_DRIVER,
 )
-from src.repository import DynamicRepository
-from src.repository.report_repository import ReportRepository
+from src.repository import DynamicRepository, ReportRepository
 
 
 class UseCases:
@@ -101,15 +100,13 @@ class UseCases:
             image = Image.open(BytesIO(content))
             image.save(file_path, format="PNG")
 
-            DynamicRepository.set_size(dynamic, image.size)
-
-            LOG.info(f"Answer-Key image {image.size} saved in PNG")
-
         except Exception as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Error in writing {ANSWER_KEY_FILENAME}",
+            raise HTTPError(
+                f"Error in writing {ANSWER_KEY_FILENAME}", error=error
             ) from error
+
+        DynamicRepository.set_size(dynamic, image.size)
+        LOG.info(f"Answer-Key image {image.size} saved in PNG")
 
         return SuccessJSON(
             request,
@@ -126,16 +123,14 @@ class UseCases:
             copy2(ENV.database_file, backup_file)
 
             LOG.debug({"backup_file": backup_file})
-            ReportRepository.clean_reports(dynamic)
-
-            LOG.info("Database file backup created successfully")
 
         except Exception as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                "Error in making the database file backup",
+            raise HTTPError(
+                "Error in making the database file backup", error=error
             ) from error
 
+        ReportRepository.clean_reports(dynamic)
+        LOG.info("Database file backup created successfully")
         LOG.info(f"{dynamic} dynamic reports records removed")
 
         return SuccessJSON(
@@ -164,9 +159,9 @@ class UseCases:
                     pass
 
         except OSError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
+            raise HTTPError(
                 f"Error in cleaning {dynamic} dynamic WEB code dirs",
+                error=error,
             ) from error
 
         dynamic_dir = join(IMG_DIR, dynamic)
@@ -189,9 +184,9 @@ class UseCases:
                     remove(screenshot_dir)
 
         except OSError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
+            raise HTTPError(
                 f"Error in cleaning {dynamic} dynamic IMG code dirs",
+                error=error,
             ) from error
 
         LOG.info(f"{dynamic} dynamic files cleaned and images removed")
@@ -245,9 +240,9 @@ class UseCases:
                     pass
 
         except Exception as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
+            raise HTTPError(
                 f"Error in creating {form.name} code dirs",
+                error=error,
             ) from error
 
         DynamicRepository.add_dynamic(form.name)
@@ -273,9 +268,8 @@ class UseCases:
         try:
             rmtree(dynamic_dir_path)
         except OSError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Error in removing dynamic dir {dynamic}",
+            raise HTTPError(
+                f"Error in removing dynamic dir {dynamic}", error=error
             ) from error
 
         DynamicRepository.remove_dynamic(dynamic)
@@ -331,9 +325,8 @@ class UseCases:
                 pass
 
         except Exception as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                "Error in adding new code dir",
+            raise HTTPError(
+                "Error in adding new code dir", error=error
             ) from error
 
         LOG.info(f"Code dir {dir_code} added")
@@ -359,9 +352,8 @@ class UseCases:
         try:
             rmtree(dynamic_dir_path)
         except OSError as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Error in removing dynamic code dir {code}",
+            raise HTTPError(
+                f"Error in removing dynamic code dir {code}", error=error
             ) from error
 
         LOG.info(f"Code dir {code} removed")
@@ -391,9 +383,8 @@ class UseCases:
                 content = file.read()
 
         except Exception as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Error in reading {query.type.file}",
+            raise HTTPError(
+                f"Error in reading {query.type.file}", error=error
             ) from error
 
         message = f"Retrieve code dir {query.code} {query.type.file}"
@@ -428,9 +419,8 @@ class UseCases:
                 file.write(form.file)
 
         except Exception as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Error in writing {form.type.file}",
+            raise HTTPError(
+                f"Error in writing {form.type.file}", error=error
             ) from error
 
         message = f"Upload code dir {form.code} {form.type.file}"
@@ -482,9 +472,8 @@ class UseCases:
                 )
 
         except Exception as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Failed to compress {dynamic} dir",
+            raise HTTPError(
+                f"Failed to compress {dynamic} dir", error=error
             ) from error
 
     @staticmethod
@@ -516,9 +505,8 @@ class UseCases:
         except Exception as error:
             LOG.error(f"Error in getting {dynamic} {code} screenshot")
 
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
-                f"Error in getting {dynamic} {code} screenshot",
+            raise HTTPError(
+                f"Error in getting {dynamic} {code} screenshot", error=error
             ) from error
 
         img_dir = join(IMG_DIR, dynamic, code)
@@ -591,9 +579,9 @@ class UseCases:
             )
 
         except Exception as error:
-            raise HTTPException(
-                HTTPStatus.INTERNAL_SERVER_ERROR,
+            raise HTTPError(
                 f"Error in handling {dynamic} {code} images to compare",
+                error=error,
             ) from error
 
         LOG.info(f"Similarity of {code} to the answer-key: {similarity:.2f}%")
