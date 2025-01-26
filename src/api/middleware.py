@@ -8,7 +8,7 @@ from starlette.middleware.base import (
 )
 from starlette.responses import Response
 
-from src.api.presenters import ErrorJSON
+from src.api.presenters import ErrorJSON, HTTPError
 from src.core.config import LOG
 from src.utils.formaters import format_error, get_error_message
 
@@ -30,16 +30,19 @@ class TracingTimeExceptionHandlerMiddleware(BaseHTTPMiddleware):
         try:
             response = await call_next(request)
 
-        except Exception as exc:  # pylint: disable=W0718
-            message = get_error_message(exc)
+        except Exception as error:  # pylint: disable=W0718
+            message = get_error_message(error)
 
             LOG.error(message)
-            LOG.exception(exc)
+            LOG.exception(error)
+
+            htt_error = HTTPError(message, error=error)
 
             response = ErrorJSON(
                 request,
                 HTTPStatus.INTERNAL_SERVER_ERROR,
-                format_error(exc, message),
+                format_error(error, message),
+                htt_error.errors
             )
 
         process_time = perf_counter() - start_time
