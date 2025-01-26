@@ -494,7 +494,7 @@ class UseCases:
         size = DynamicRepository.get_size(dynamic)
         LOG.debug({"answer_key_size": size})
 
-        WEB_DRIVER.set_window_rect(0, 0)
+        WEB_DRIVER.set_window_position(0, 0)
         WEB_DRIVER.maximize_window()
 
         try:
@@ -537,7 +537,7 @@ class UseCases:
             if answer_key.shape != screenshot.shape:  # type: ignore
                 LOG.error("Answer-Key and screenshot have different sizes")
 
-                old_size = screenshot.shape[:2]
+                old_size = (screenshot.shape[1], screenshot.shape[0])
                 LOG.info(f"Resizing screenshot from {old_size} to {size}")
 
                 screenshot = resize(  # type: ignore
