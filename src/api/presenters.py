@@ -1,11 +1,17 @@
 from datetime import datetime
 from http import HTTPStatus
+from os.path import split
+from sys import exc_info
+from traceback import extract_tb
 from typing import Any
 
+from fastapi import HTTPException as FastAPIHTTPException
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 from pydantic_core import PydanticUndefined
+
+from src.utils.formaters import get_error_message
 
 
 class BaseResponse(BaseModel):
@@ -97,3 +103,33 @@ class ErrorJSON(JSONResponse):
         if self.__KEY in item and item[self.__KEY] is PydanticUndefined:
             item[self.__KEY] = "PydanticUndefined"
         return item
+
+
+class HTTPError(FastAPIHTTPException):
+    """Detailed HTTP errors"""
+
+    def __init__(
+        self, message: str, code: HTTPStatus = None, error: Exception = None
+    ) -> None:
+        """Detailed HTTP errors"""
+        if code is None:
+            code = HTTPStatus.INTERNAL_SERVER_ERROR
+
+        if error is not None:
+            errors = {"type": type(error).__name__}
+            traceback = exc_info()[2]
+
+            if traceback is not None:
+                file_path, line, _, _ = extract_tb(traceback)[-1]
+                errors.setdefault("file", split(file_path)[1])
+                errors.setdefault("line", line)
+
+            if isinstance(error, FastAPIHTTPException):
+                errors.setdefault("detail", error.detail)
+                errors.setdefault("status_code", error.status_code)
+
+            else:
+                errors.setdefault("detail", get_error_message(error))
+
+        self.errors = [errors] if error is not None else None
+        super().__init__(code, message)
