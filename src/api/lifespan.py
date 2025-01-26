@@ -1,6 +1,5 @@
 from contextlib import asynccontextmanager
 
-
 from fastapi import FastAPI
 
 from src.core.config import LOG, WEB_DRIVER

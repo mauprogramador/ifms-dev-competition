@@ -1,7 +1,6 @@
 from os import listdir
 from os.path import exists
 from secrets import token_hex
-# from multiprocessing import Pool
 
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
@@ -12,6 +11,9 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 from src.core.env import EnvConfig
 from src.utils.logging import Logging
+
+# from multiprocessing import Pool
+
 
 APP = "src.api.main:app"
 

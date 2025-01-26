@@ -2,15 +2,7 @@ from http import HTTPStatus
 from tempfile import NamedTemporaryFile, _TemporaryFileWrapper
 from typing import Annotated
 
-from fastapi import (
-    Depends,
-    File,
-    Form,
-    HTTPException,
-    Path,
-    Query,
-    UploadFile,
-)
+from fastapi import Depends, File, Form, HTTPException, Path, Query, UploadFile
 from pydantic import AfterValidator, BaseModel, Field, field_validator
 
 from src.common.enums import FileType, LockStatus, Operation
@@ -102,9 +94,7 @@ CodePath = Annotated[
 
 TempFile = Annotated[_TemporaryFileWrapper, Depends(get_temp_file)]
 
-RetrieveFileQuery = Annotated[
-    RetrieveData, Query(description="Retrieve")
-]
+RetrieveFileQuery = Annotated[RetrieveData, Query(description="Retrieve")]
 
 UploadFileForm = Annotated[UploadData, Form(description="Upload")]
 

@@ -10,18 +10,18 @@ from src.common.params import (
     AnswerKeyFile,
     CodePath,
     DynamicPath,
-    RetrieveFileQuery,
-    UploadFileForm,
     HasLock,
+    LockQuery,
     NewDynamicForm,
     OperationPath,
+    RetrieveFileQuery,
     TempFile,
+    UploadFileForm,
     WeightQuery,
-    LockQuery,
 )
 from src.core.config import LIMIT, LIMITER, LOG
-from src.repository import ReportRepository
 from src.core.use_cases import UseCases
+from src.repository import ReportRepository
 
 router = APIRouter(prefix="/v2/ifms-dev-competition/api")
 

@@ -8,6 +8,7 @@ from src.api.presenters import SuccessJSON
 from src.common.enums import Operation
 from src.common.params import RetrieveData, UploadData
 from src.core.config import ENV, LOG
+from src.repository import queries
 from src.repository.dynamic_repository import DynamicRepository
 from src.utils.formaters import (
     format_dynamic_report,
@@ -15,7 +16,6 @@ from src.utils.formaters import (
     format_operation_report,
     set_operation_to_all,
 )
-from src.repository import queries
 
 
 class ReportRepository:
