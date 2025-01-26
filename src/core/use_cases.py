@@ -10,28 +10,32 @@ from tempfile import _TemporaryFileWrapper
 from time import strftime
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from fastapi import HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse
-from numpy import array, count_nonzero
-from numpy import sum as sum_array
-from PIL import Image
 from cv2 import (
-    COLOR_RGB2BGR,
+    COLOR_BGR2GRAY,
+    COLOR_GRAY2BGR,
+    IMREAD_COLOR,
     INTER_CUBIC,
+    THRESH_BINARY,
+    absdiff,
     cvtColor,
+    imdecode,
     imread,
     imwrite,
-    absdiff,
     resize,
+    subtract,
+    threshold,
 )
+from fastapi import HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse
+from numpy import all as np_all
+from numpy import count_nonzero, frombuffer, full_like
+from numpy import sum as np_sum
+from numpy import uint8
+from PIL import Image
 
 from src.api.presenters import SuccessJSON
-from src.common.enums import LockStatus, FileType
-from src.common.params import (
-    CreateNewDynamic,
-    RetrieveData,
-    UploadData,
-)
+from src.common.enums import FileType, LockStatus
+from src.common.params import CreateNewDynamic, RetrieveData, UploadData
 from src.core.config import (
     ANSWER_KEY_FILENAME,
     DIFF_FILENAME,
@@ -498,24 +502,16 @@ class UseCases:
                 f"Index.html not found in {dynamic} {code} code dir",
             )
 
-        width, height = DynamicRepository.get_size(dynamic)
-        LOG.debug({"answer_key_size": (width, height)})
+        size = DynamicRepository.get_size(dynamic)
+        LOG.debug({"answer_key_size": size})
 
-        WEB_DRIVER.set_window_rect(0, 0, width, height)
+        WEB_DRIVER.set_window_rect(0, 0)
         WEB_DRIVER.maximize_window()
 
         try:
             WEB_DRIVER.get(dynamic_dir_path.absolute().as_uri())
             WEB_DRIVER.implicitly_wait(1)
-            screenshot = WEB_DRIVER.get_screenshot_as_png()
-
-            img_dir = join(IMG_DIR, dynamic, code)
-            makedirs(img_dir, exist_ok=True)
-            file_path = join(img_dir, SCREENSHOT_FILENAME)
-
-            screenshot_image = Image.open(BytesIO(screenshot))
-            LOG.debug({"screenshot_size": screenshot_image.size})
-            screenshot_image.save(file_path, format="PNG")
+            binary_screenshot = WEB_DRIVER.get_screenshot_as_png()
 
         except Exception as error:
             LOG.error(f"Error in getting {dynamic} {code} screenshot")
@@ -525,8 +521,13 @@ class UseCases:
                 f"Error in getting {dynamic} {code} screenshot",
             ) from error
 
-        LOG.info(f"{dynamic} {code} screenshot saved")
+        img_dir = join(IMG_DIR, dynamic, code)
+        makedirs(img_dir, exist_ok=True)
 
+        array_screenshot = frombuffer(binary_screenshot, dtype=uint8)
+        screenshot = imdecode(array_screenshot, IMREAD_COLOR)
+
+        screenshot_path = join(img_dir, SCREENSHOT_FILENAME)
         answer_key_path = join(IMG_DIR, dynamic, ANSWER_KEY_FILENAME)
 
         if not exists(answer_key_path):
@@ -537,9 +538,7 @@ class UseCases:
             )
 
         try:
-            screenshot = cvtColor(array(screenshot_image), COLOR_RGB2BGR)
             answer_key = imread(answer_key_path)
-
             LOG.debug(
                 {
                     "answer_key_shape": answer_key.shape,
@@ -548,23 +547,41 @@ class UseCases:
             )
 
             if answer_key.shape != screenshot.shape:  # type: ignore
+                LOG.error("Answer-Key and screenshot have different sizes")
+
+                old_size = screenshot.shape[:2]
+                LOG.info(f"Resizing screenshot from {old_size} to {size}")
+
                 screenshot = resize(  # type: ignore
                     screenshot,
-                    (width, height),
+                    size,
                     interpolation=INTER_CUBIC,
                 )
-                LOG.error(
-                    "Answer-Key and screenshot have different dimensions"
-                )
+
+            imwrite(screenshot_path, screenshot)
+            LOG.info(f"{dynamic} {code} screenshot saved")
 
             total_pixels = answer_key.shape[0] * answer_key.shape[1]
             diff = absdiff(answer_key, screenshot)  # type: ignore
 
+            num_diff_pixels = count_nonzero(np_sum(diff, 2))
+            percentage_diff: float = (num_diff_pixels / total_pixels) * 100
+            similarity = 100.00 - percentage_diff
+
+            diff = subtract(answer_key, screenshot)
+            gray_diff = cvtColor(diff, COLOR_BGR2GRAY)
+
+            diff = threshold(gray_diff, 30, 255, THRESH_BINARY)[1]
+            diff = cvtColor(diff, COLOR_GRAY2BGR)
+            diff[:, :, 0] = 0
+            diff[:, :, 1] = 0
+
+            black_pixels_mask = np_all(diff == 0, axis=2)
+            white_image = full_like(answer_key, 255)
+            diff[black_pixels_mask] = white_image[black_pixels_mask]
+
             diff_path = join(IMG_DIR, dynamic, code, DIFF_FILENAME)
             imwrite(diff_path, diff)
-
-            num_diff_pixels = count_nonzero(sum_array(diff, 2))
-            percentage_diff: float = (num_diff_pixels / total_pixels) * 100
 
             LOG.debug(
                 {
@@ -573,14 +590,12 @@ class UseCases:
                 }
             )
 
-            similarity = 100.00 - percentage_diff
-
         except Exception as error:
             raise HTTPException(
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 f"Error in handling {dynamic} {code} images to compare",
             ) from error
 
-        LOG.info(f"Similarity of {code} to the answer-key: {similarity:.2f}")
+        LOG.info(f"Similarity of {code} to the answer-key: {similarity:.2f}%")
 
         return similarity
