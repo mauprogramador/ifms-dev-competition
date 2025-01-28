@@ -3,21 +3,21 @@ from http import HTTPStatus
 from fastapi import Request
 from fastapi.routing import APIRouter
 
+from src.api.presenters import SuccessJSON, SuccessResponse
 from src.common.params import (
     AnswerKeyFile,
     DynamicPath,
     LockQuery,
     WeightQuery,
 )
-from src.api.presenters import SuccessJSON, SuccessResponse
-from src.use_cases.admin import (
-    lock_requests,
-    set_weight,
-    save_answer_key,
-    clean_reports,
-    clean_files,
-)
 from src.core.config import LOG, ROUTE_PREFIX
+from src.use_cases.admin import (
+    clean_files,
+    clean_reports,
+    lock_requests,
+    save_answer_key,
+    set_weight,
+)
 
 router = APIRouter(prefix=ROUTE_PREFIX, tags=["Admin"])
 

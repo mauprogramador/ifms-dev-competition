@@ -146,9 +146,7 @@ async def clean_files(request: Request, dynamic: str) -> SuccessJSON:
             diff_dir = join(dynamic_dir, code_dir, DIFF_FILENAME)
             if exists(diff_dir):
                 remove(diff_dir)
-            screenshot_dir = join(
-                dynamic_dir, code_dir, SCREENSHOT_FILENAME
-            )
+            screenshot_dir = join(dynamic_dir, code_dir, SCREENSHOT_FILENAME)
             if exists(screenshot_dir):
                 remove(screenshot_dir)
 

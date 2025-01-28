@@ -42,7 +42,7 @@ class TracingTimeExceptionHandlerMiddleware(BaseHTTPMiddleware):
                 request,
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 format_error(error, message),
-                htt_error.errors
+                htt_error.errors,
             )
 
         process_time = perf_counter() - start_time
