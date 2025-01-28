@@ -16,6 +16,7 @@ from src.utils.logging import Logging
 
 
 APP = "src.api.main:app"
+ROUTE_PREFIX = "/v2/ifms-dev-competition/api"
 
 WEB_DIR = "web"
 IMG_DIR = "images"
