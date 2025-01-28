@@ -7,7 +7,6 @@ from fastapi.routing import APIRouter
 from src.api.presenters import SuccessJSON, SuccessResponse
 from src.common.enums import FileType, Operation
 from src.common.params import (
-    CodePath,
     DynamicPath,
     HasLock,
     OperationPath,
@@ -20,49 +19,6 @@ from src.core.use_cases import UseCases
 from src.repository import ReportRepository
 
 router = APIRouter(prefix="/v2/ifms-dev-competition/api")
-
-
-# "/{dynamic}/list-code-dirs",
-@router.get(
-    "/{dynamic}/list",
-    status_code=HTTPStatus.OK,
-    tags=["Code Dirs"],
-    summary="List a dynamic code dirs",
-    response_model=SuccessResponse,
-)
-async def list_code_dirs(
-    request: Request, dynamic: DynamicPath
-) -> SuccessJSON:
-    LOG.debug({"dynamic": dynamic})
-    return await UseCases.list_code_dirs(request, dynamic)
-
-
-# "/{dynamic}/add-code-dir",
-@router.post(
-    "/{dynamic}/add",
-    status_code=HTTPStatus.OK,
-    tags=["Code Dirs"],
-    summary="Add a dynamic new code dir",
-    response_model=SuccessResponse,
-)
-async def add_code_dir(request: Request, dynamic: DynamicPath) -> SuccessJSON:
-    LOG.debug({"dynamic": dynamic})
-    return await UseCases.add_code_dir(request, dynamic)
-
-
-# "/{dynamic}/remove-code-dir/{code}",
-@router.delete(
-    "/{dynamic}/remove/{code}",
-    status_code=HTTPStatus.OK,
-    tags=["Code Dirs"],
-    summary="Remove a dynamic code dir",
-    response_model=SuccessResponse,
-)
-async def remove_code_dir(
-    request: Request, dynamic: DynamicPath, code: CodePath
-) -> SuccessJSON:
-    LOG.debug({"dynamic": dynamic, "code": code})
-    return await UseCases.remove_code_dir(request, dynamic, code)
 
 
 # "/{dynamic}/retrieve-file",
