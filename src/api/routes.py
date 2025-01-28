@@ -10,7 +10,6 @@ from src.common.params import (
     CodePath,
     DynamicPath,
     HasLock,
-    NewDynamicForm,
     OperationPath,
     RetrieveFileQuery,
     TempFile,
@@ -21,43 +20,6 @@ from src.core.use_cases import UseCases
 from src.repository import ReportRepository
 
 router = APIRouter(prefix="/v2/ifms-dev-competition/api")
-
-
-@router.get(
-    "/list-dynamics",
-    status_code=HTTPStatus.OK,
-    tags=["Dynamics"],
-    summary="Lists all Dynamics and its teams code dirs",
-    response_model=SuccessResponse,
-)
-async def list_dynamics(request: Request) -> SuccessJSON:
-    return await UseCases.list_dynamics(request)
-
-
-@router.post(
-    "/add-dynamic",
-    status_code=HTTPStatus.OK,
-    tags=["Dynamics"],
-    summary="Adds a new Dynamic and its teams code dirs",
-    response_model=SuccessResponse,
-)
-async def add_dynamic(request: Request, form: NewDynamicForm) -> SuccessJSON:
-    LOG.debug(form.model_dump())
-    return await UseCases.add_dynamic(request, form)
-
-
-@router.delete(
-    "/remove-dynamic/{dynamic}",
-    status_code=HTTPStatus.OK,
-    tags=["Dynamics"],
-    summary="Removes a Dynamic and its teams code dirs",
-    response_model=SuccessResponse,
-)
-async def remove_dynamic(
-    request: Request, dynamic: DynamicPath
-) -> SuccessJSON:
-    LOG.debug({"dynamic": dynamic})
-    return await UseCases.remove_dynamic(request, dynamic)
 
 
 # "/{dynamic}/list-code-dirs",
