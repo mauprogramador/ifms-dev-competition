@@ -7,95 +7,20 @@ from fastapi.routing import APIRouter
 from src.api.presenters import SuccessJSON, SuccessResponse
 from src.common.enums import FileType, Operation
 from src.common.params import (
-    AnswerKeyFile,
     CodePath,
     DynamicPath,
     HasLock,
-    LockQuery,
     NewDynamicForm,
     OperationPath,
     RetrieveFileQuery,
     TempFile,
     UploadFileForm,
-    WeightQuery,
 )
 from src.core.config import LIMIT, LIMITER, LOG
 from src.core.use_cases import UseCases
 from src.repository import ReportRepository
 
 router = APIRouter(prefix="/v2/ifms-dev-competition/api")
-
-
-@router.put(
-    "/{dynamic}/lock-requests",
-    status_code=HTTPStatus.OK,
-    tags=["Admin"],
-    summary="Lock/Unlock sending requests of a dynamic",
-    response_model=SuccessResponse,
-)
-async def dynamic_lock_requests(
-    request: Request, dynamic: DynamicPath, lock_requests: LockQuery
-) -> SuccessJSON:
-    LOG.debug({"dynamic": dynamic, "lock_requests": lock_requests.value})
-    return await UseCases.lock_requests(request, dynamic, lock_requests)
-
-
-@router.put(
-    "/{dynamic}/set-weight",
-    status_code=HTTPStatus.OK,
-    tags=["Admin"],
-    summary="Sets the weight of the score calculation",
-    response_model=SuccessResponse,
-)
-async def set_weight(
-    request: Request, dynamic: DynamicPath, weight: WeightQuery
-) -> SuccessJSON:
-    LOG.debug({"dynamic": dynamic, "weight": weight})
-    return await UseCases.set_weight(request, dynamic, weight)
-
-
-@router.post(
-    "/{dynamic}/answer-key",
-    status_code=HTTPStatus.OK,
-    tags=["Admin"],
-    summary="Saves a dynamic answer key image",
-    response_model=SuccessResponse,
-)
-async def save_answer_key(
-    request: Request, dynamic: DynamicPath, file: AnswerKeyFile
-) -> SuccessJSON:
-    LOG.debug(
-        {
-            "dynamic": dynamic,
-            "filename": file.filename,
-            "content_type": file.content_type,
-        }
-    )
-    return await UseCases.save_answer_key(request, dynamic, file)
-
-
-@router.delete(
-    "/{dynamic}/clean-reports",
-    status_code=HTTPStatus.OK,
-    tags=["Admin"],
-    summary="Removes a dynamic reports records",
-    response_model=SuccessResponse,
-)
-async def clean_reports(request: Request, dynamic: DynamicPath) -> SuccessJSON:
-    LOG.debug({"dynamic": dynamic})
-    return await UseCases.clean_reports(request, dynamic)
-
-
-@router.delete(
-    "/{dynamic}/clean-files",
-    status_code=HTTPStatus.OK,
-    tags=["Admin"],
-    summary="Empties all files of a dynamic",
-    response_model=SuccessResponse,
-)
-async def clean_files(request: Request, dynamic: DynamicPath) -> SuccessJSON:
-    LOG.debug({"dynamic": dynamic})
-    return await UseCases.clean_files(request, dynamic)
 
 
 @router.get(
