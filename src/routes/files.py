@@ -6,9 +6,8 @@ from fastapi.routing import APIRouter
 
 from src.api.presenters import SuccessJSON, SuccessResponse
 from src.common.enums import FileType, Operation
-from src.common.params import (
+from src.common.types import (
     DynamicPath,
-    HasLock,
     RetrieveFileQuery,
     TempFile,
     UploadFileForm,
@@ -25,7 +24,6 @@ router = APIRouter(prefix=ROUTE_PREFIX, tags=["Files"])
 @router.get(
     "/{dynamic}/retrieve",
     status_code=HTTPStatus.OK,
-    dependencies=[HasLock],
     summary="Retrieves a code dir file",
     response_model=SuccessResponse,
 )
@@ -47,7 +45,6 @@ async def api_retrieve_file(
 @router.post(
     "/{dynamic}/upload",
     status_code=HTTPStatus.OK,
-    dependencies=[HasLock],
     summary="Uploads a code dir file",
     response_model=SuccessResponse,
 )

@@ -10,11 +10,17 @@ from fastapi.responses import FileResponse
 from src.api.presenters import HTTPError, SuccessJSON
 from src.common.params import RetrieveData, UploadData
 from src.core.config import LOG, WEB_DIR
+from src.repository.dynamic_repository import DynamicRepository
 
 
 async def retrieve_file(
     request: Request, dynamic: str, query: RetrieveData
 ) -> SuccessJSON:
+    if DynamicRepository.get_lock_status(dynamic):
+        raise HTTPException(
+            HTTPStatus.LOCKED, "Request sending has not started yet"
+        )
+
     code_dir_path = join(WEB_DIR, dynamic, query.code)
 
     if not exists(code_dir_path):
@@ -52,6 +58,11 @@ async def retrieve_file(
 async def upload_file(
     request: Request, dynamic: str, form: UploadData
 ) -> SuccessJSON:
+    if DynamicRepository.get_lock_status(dynamic):
+        raise HTTPException(
+            HTTPStatus.LOCKED, "Request sending has not started yet"
+        )
+
     code_dir_path = join(WEB_DIR, dynamic, form.code)
 
     if not exists(code_dir_path):
