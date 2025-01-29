@@ -4,12 +4,7 @@ from fastapi import Request
 from fastapi.routing import APIRouter
 
 from src.api.presenters import SuccessJSON, SuccessResponse
-from src.common.params import (
-    AnswerKeyFile,
-    DynamicPath,
-    LockQuery,
-    WeightQuery,
-)
+from src.common.types import AnswerKeyFile, DynamicPath, LockQuery, WeightQuery
 from src.core.config import LOG, ROUTE_PREFIX
 from src.use_cases.admin import (
     clean_files,

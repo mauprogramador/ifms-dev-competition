@@ -4,7 +4,7 @@ from fastapi import Request
 from fastapi.routing import APIRouter
 
 from src.api.presenters import SuccessJSON, SuccessResponse
-from src.common.params import DynamicPath, OperationPath, RetrieveFileQuery
+from src.common.types import DynamicPath, OperationPath, RetrieveFileQuery
 from src.core.config import LIMIT, LIMITER, LOG, ROUTE_PREFIX
 from src.repository import ReportRepository
 

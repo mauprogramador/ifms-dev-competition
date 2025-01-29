@@ -4,7 +4,7 @@ from fastapi import Request
 from fastapi.routing import APIRouter
 
 from src.api.presenters import SuccessJSON, SuccessResponse
-from src.common.params import DynamicPath, NewDynamicForm
+from src.common.types import DynamicPath, NewDynamicForm
 from src.core.config import LOG, ROUTE_PREFIX
 from src.use_cases.dynamics import add_dynamic, list_dynamics, remove_dynamic
 

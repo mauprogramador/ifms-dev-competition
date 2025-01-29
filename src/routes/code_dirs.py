@@ -4,7 +4,7 @@ from fastapi import Request
 from fastapi.routing import APIRouter
 
 from src.api.presenters import SuccessJSON, SuccessResponse
-from src.common.params import CodePath, DynamicPath
+from src.common.types import CodePath, DynamicPath
 from src.core.config import LOG, ROUTE_PREFIX
 from src.use_cases.code_dirs import (
     add_code_dir,
