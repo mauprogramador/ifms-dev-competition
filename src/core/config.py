@@ -51,6 +51,9 @@ WEB_DRIVER = Chrome(
     options=CHROME_OPTIONS,
 )
 
+WEB_DRIVER.set_window_position(0, 0)
+WEB_DRIVER.maximize_window()
+
 # POOL = Pool(processes=6)
 
 HEADERS = [

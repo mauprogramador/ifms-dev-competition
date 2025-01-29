@@ -55,9 +55,6 @@ async def compare_similarity(
     size = DynamicRepository.get_size(dynamic)
     LOG.debug({"answer_key_size": size})
 
-    WEB_DRIVER.set_window_position(0, 0)
-    WEB_DRIVER.maximize_window()
-
     try:
         WEB_DRIVER.get(dynamic_dir_path.absolute().as_uri())
         WEB_DRIVER.implicitly_wait(1)
