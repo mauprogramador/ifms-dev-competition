@@ -1,6 +1,6 @@
 from datetime import datetime
 from http import HTTPStatus
-from os.path import split
+from pathlib import Path
 from sys import exc_info
 from traceback import extract_tb
 from typing import Any
@@ -121,7 +121,7 @@ class HTTPError(FastAPIHTTPException):
 
             if traceback is not None:
                 file_path, line, _, _ = extract_tb(traceback)[-1]
-                errors.setdefault("file", split(file_path)[1])
+                errors.setdefault("file", Path(file_path).name)
                 errors.setdefault("line", line)
 
             if isinstance(error, FastAPIHTTPException):

@@ -1,5 +1,3 @@
-from os import makedirs
-
 import cv2  # pylint: disable=w0611 # noqa: F401
 import fastapi  # pylint: disable=w0611 # noqa: F401
 import itsdangerous  # pylint: disable=w0611 # noqa: F401
@@ -16,8 +14,8 @@ from src.core.config import APP, ENV, HEADERS, IMG_DIR, LOG, WEB_DIR
 
 if __name__ == "__main__":
 
-    makedirs(WEB_DIR, exist_ok=True)
-    makedirs(IMG_DIR, exist_ok=True)
+    WEB_DIR.mkdir(parents=True, exist_ok=True)
+    IMG_DIR.mkdir(parents=True, exist_ok=True)
 
     LOG.info("\033[33mIFMS Dev Competition RESTful API was initialized 🚀")
     LOG.debug(ENV.model_dump())

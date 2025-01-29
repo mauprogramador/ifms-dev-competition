@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from io import BytesIO
-from os import listdir, makedirs, remove
-from os.path import exists, join, splitext
+from pathlib import Path
 from shutil import copy2
 from time import strftime
 
@@ -59,11 +58,11 @@ async def save_answer_key(
         )
 
     try:
-        makedirs(IMG_DIR, exist_ok=True)
-        dynamic_dir = join(IMG_DIR, dynamic)
+        IMG_DIR.mkdir(parents=True, exist_ok=True)
+        dynamic_dir = IMG_DIR / dynamic
 
-        makedirs(dynamic_dir, exist_ok=True)
-        file_path = join(dynamic_dir, ANSWER_KEY_FILENAME)
+        dynamic_dir.mkdir(parents=True, exist_ok=True)
+        file_path = dynamic_dir / ANSWER_KEY_FILENAME
 
         content = await file.read()
         image = Image.open(BytesIO(content))
@@ -86,9 +85,9 @@ async def save_answer_key(
 async def clean_reports(request: Request, dynamic: str) -> SuccessJSON:
     try:
         timestamp = strftime("%Y-%m-%d_%H-%M-%S")
-        file = splitext(ENV.database_file)
+        file = Path(ENV.database_file)
 
-        backup_file = f"{file[0]}_{timestamp}{file[1]}"
+        backup_file = f"{file.stem}_{timestamp}{file.suffix}"
         copy2(ENV.database_file, backup_file)
 
         LOG.debug({"backup_file": backup_file})
@@ -110,20 +109,21 @@ async def clean_reports(request: Request, dynamic: str) -> SuccessJSON:
 
 
 async def clean_files(request: Request, dynamic: str) -> SuccessJSON:
-    dynamic_dir = join(WEB_DIR, dynamic)
+    dynamic_dir = WEB_DIR / dynamic
 
-    if not exists(dynamic_dir):
+    if not dynamic_dir.exists():
         raise HTTPException(
             HTTPStatus.NOT_FOUND, f"{dynamic} dynamic WEB dir not found"
         )
 
     try:
-        for code_dir in listdir(dynamic_dir):
-            index_path = join(dynamic_dir, code_dir, FileType.HTML.file)
+        for code_dir in list(filter(Path.is_dir, dynamic_dir.iterdir())):
+
+            index_path = dynamic_dir / code_dir / FileType.HTML.file
             with open(index_path, mode="w", encoding="utf-8"):
                 pass
 
-            css_path = join(dynamic_dir, code_dir, FileType.CSS.file)
+            css_path = dynamic_dir / code_dir / FileType.CSS.file
             with open(css_path, mode="w", encoding="utf-8"):
                 pass
 
@@ -133,22 +133,22 @@ async def clean_files(request: Request, dynamic: str) -> SuccessJSON:
             error=error,
         ) from error
 
-    dynamic_dir = join(IMG_DIR, dynamic)
+    dynamic_dir = IMG_DIR / dynamic
 
-    if not exists(dynamic_dir):
+    if not dynamic_dir.exists():
         LOG.info(f"{dynamic} dynamic files cleaned")
         LOG.error(f"{dynamic} dynamic IMG dir not found")
 
         return SuccessJSON(request, f"{dynamic} dynamic files cleaned")
 
     try:
-        for code_dir in listdir(dynamic_dir):
-            diff_dir = join(dynamic_dir, code_dir, DIFF_FILENAME)
-            if exists(diff_dir):
-                remove(diff_dir)
-            screenshot_dir = join(dynamic_dir, code_dir, SCREENSHOT_FILENAME)
-            if exists(screenshot_dir):
-                remove(screenshot_dir)
+        for code_dir in list(filter(Path.is_dir, dynamic_dir.iterdir())):
+
+            diff_dir = dynamic_dir / code_dir / DIFF_FILENAME
+            diff_dir.unlink(missing_ok=True)
+
+            screenshot_dir = dynamic_dir / code_dir / SCREENSHOT_FILENAME
+            screenshot_dir.unlink(missing_ok=True)
 
     except OSError as error:
         raise HTTPError(

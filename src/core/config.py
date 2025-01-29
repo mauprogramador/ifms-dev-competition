@@ -1,5 +1,4 @@
-from os import listdir
-from os.path import exists
+from pathlib import Path
 from secrets import token_hex
 
 from selenium.webdriver import Chrome
@@ -18,13 +17,10 @@ from src.utils.logging import Logging
 APP = "src.api.main:app"
 ROUTE_PREFIX = "/v2/ifms-dev-competition/api"
 
-WEB_DIR = "web"
-IMG_DIR = "images"
+WEB_DIR = Path("web")
+IMG_DIR = Path("images")
 
 DEFAULT_WEIGHT = 5000
-DEFAULT_LOCK = (
-    {dynamic: True for dynamic in listdir(WEB_DIR)} if exists(WEB_DIR) else {}
-)
 
 ANSWER_KEY_FILENAME = "answer_key.png"
 DIFF_FILENAME = "diff.png"

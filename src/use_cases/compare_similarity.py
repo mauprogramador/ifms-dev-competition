@@ -1,6 +1,4 @@
 from http import HTTPStatus
-from os import makedirs
-from os.path import exists, join
 from pathlib import Path
 
 from cv2 import (
@@ -43,10 +41,9 @@ async def compare_similarity(
     code: str,
 ) -> float:
 
-    dynamic_dir = join(WEB_DIR, dynamic, code, FileType.HTML.file)
-    dynamic_dir_path = Path(dynamic_dir)
+    dynamic_dir = Path(WEB_DIR, dynamic, code, FileType.HTML.file)
 
-    if not dynamic_dir_path.exists():
+    if not dynamic_dir.exists():
         raise HTTPException(
             HTTPStatus.NOT_FOUND,
             f"Index.html not found in {dynamic} {code} code dir",
@@ -56,7 +53,7 @@ async def compare_similarity(
     LOG.debug({"answer_key_size": size})
 
     try:
-        WEB_DRIVER.get(dynamic_dir_path.absolute().as_uri())
+        WEB_DRIVER.get(dynamic_dir.absolute().as_uri())
         WEB_DRIVER.implicitly_wait(1)
         binary_screenshot = WEB_DRIVER.get_screenshot_as_png()
 
@@ -67,22 +64,22 @@ async def compare_similarity(
             f"Error in getting {dynamic} {code} screenshot", error=error
         ) from error
 
-    img_dir = join(IMG_DIR, dynamic, code)
-    makedirs(img_dir, exist_ok=True)
+    img_dir = Path(IMG_DIR, dynamic, code)
+    img_dir.mkdir(parents=True, exist_ok=True)
 
     array_screenshot = frombuffer(binary_screenshot, dtype=uint8)
     screenshot = imdecode(array_screenshot, IMREAD_COLOR)
 
-    screenshot_path = join(img_dir, SCREENSHOT_FILENAME)
-    answer_key_path = join(IMG_DIR, dynamic, ANSWER_KEY_FILENAME)
+    screenshot_path = Path(img_dir, SCREENSHOT_FILENAME)
+    answer_key_path = Path(IMG_DIR, dynamic, ANSWER_KEY_FILENAME)
 
-    if not exists(answer_key_path):
+    if not answer_key_path.exists():
         LOG.error("Answer-Key image not found")
 
         raise HTTPException(HTTPStatus.NOT_FOUND, "Answer-Key image not found")
 
     try:
-        answer_key = imread(answer_key_path)
+        answer_key = imread(str(answer_key_path))
         LOG.debug(
             {
                 "answer_key_shape": answer_key.shape,
@@ -102,7 +99,7 @@ async def compare_similarity(
                 interpolation=INTER_CUBIC,
             )
 
-        imwrite(screenshot_path, screenshot)
+        imwrite(str(screenshot_path), screenshot)
         LOG.info(f"{dynamic} {code} screenshot saved")
 
         total_pixels = answer_key.shape[0] * answer_key.shape[1]
@@ -124,8 +121,8 @@ async def compare_similarity(
         white_image = full_like(answer_key, 255)
         diff[black_pixels_mask] = white_image[black_pixels_mask]
 
-        diff_path = join(IMG_DIR, dynamic, code, DIFF_FILENAME)
-        imwrite(diff_path, diff)
+        diff_path = Path(IMG_DIR, dynamic, code, DIFF_FILENAME)
+        imwrite(str(diff_path), diff)
 
         LOG.debug(
             {

@@ -3,8 +3,7 @@ from http import HTTPStatus
 from json import dumps
 from logging import DEBUG, ERROR, INFO, Formatter, StreamHandler, getLogger
 from logging.handlers import RotatingFileHandler
-from os import makedirs
-from os.path import join, split, splitext
+from pathlib import Path
 from re import sub
 from sys import stdout
 
@@ -60,13 +59,14 @@ class Logging:
         self.__logger.addHandler(self.__stream_handler)
 
         if logging_file:
-            makedirs(self.__DIR, exist_ok=True)
-            filename = join(self.__DIR, "records_0.log")
+            Path(self.__DIR).mkdir(parents=True, exist_ok=True)
+            filename = Path(self.__DIR, "records_0.log")
 
             file_handler = RotatingFileHandler(
                 filename=filename,
                 mode="a",
-                maxBytes=50000,
+                maxBytes=5,
+                # maxBytes=50000,
                 backupCount=15,
                 encoding="utf-8",
             )
@@ -78,10 +78,9 @@ class Logging:
             getLogger("uvicorn").addHandler(file_handler)
             self.__logger.addHandler(file_handler)
 
-    def __namer(self, default_filename: str) -> str:
-        log_dir = split(default_filename)[0]
-        log_count = splitext(default_filename)[1][1:]
-        return join(log_dir, f"records_{log_count}.log")
+    def __namer(self, default_filename: str) -> Path:
+        log_count = Path(default_filename).suffixes[1].removeprefix(".")
+        return Path(default_filename).with_name(f"records_{log_count}.log")
 
     def info(self, message: str) -> None:
         self.__logger.setLevel(INFO)
