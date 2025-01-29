@@ -9,9 +9,15 @@ from src import __version__
 from src.api.lifespan import lifespan
 from src.api.middleware import TracingTimeExceptionHandlerMiddleware
 from src.api.presenters import ErrorResponse, SuccessResponse
-from src.api.routes import router
 from src.core.config import ENV, LIMITER, SECRET_KEY
 from src.core.exception_handler import ExceptionHandler
+from src.routes import (
+    admin_router,
+    code_dirs_router,
+    dynamics_router,
+    files_router,
+    reports_router,
+)
 
 CONTACT = {
     "name": "@mauprogramador",
@@ -73,5 +79,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(admin_router)
+app.include_router(dynamics_router)
+app.include_router(code_dirs_router)
+app.include_router(files_router)
+app.include_router(reports_router)
+
 app.mount("/images", StaticFiles(directory="images"))
-app.include_router(router)
