@@ -31,13 +31,14 @@ class ANSIFormatter(Formatter):
 class Logging:
     """Configure and customize application logging"""
 
+    __METHOD_COLOR = {"GET": "94", "POST": "92", "PUT": "93", "DELETE": "91"}
     __TRACE = (
-        "[\033[36m{host}\033[m:\033[36m{port}\033[m] \033[{color}m"
-        "{method} \033[37;1m{url}\033[m \033[{color}m{code} "
+        "[\033[36m{host}\033[m:\033[36m{port}\033[m] \033[{method_color}m"
+        "{method} \033[37;1m{url}\033[m \033[{status_color}m{code} "
         "{status_phrase} \033[m{time:.2f}s"
     )
     __UVICORN_FMT = "%(asctime)s %(levelprefix)s %(message)s"
-    __COLOR = {2: "32", 3: "33", 4: "31", 5: "31"}
+    __STATUS_COLOR = {2: "32", 3: "33", 4: "31", 5: "31"}
     __LOGGER_NAME = "ifms.dev.competition"
     __FMT = "%(asctime)s %(message)s"
     __DATEFMT = "%Y-%m-%d %H:%M:%S"
@@ -118,9 +119,10 @@ class Logging:
         message = self.__TRACE.format(
             host=host,
             port=port,
-            color=self.__COLOR[(code // 100)],
+            method_color=self.__METHOD_COLOR.get(request.method, "90"),
             method=request.method,
             url=request.url,
+            status_color=self.__STATUS_COLOR.get((code // 100), "30"),
             code=code,
             status_phrase=HTTPStatus(code).phrase,
             time=time,
