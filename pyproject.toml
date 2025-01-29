@@ -26,6 +26,13 @@ pylint = "^3.3.3"
 mypy = "^1.14.1"
 dill = "^0.3.9"
 
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.4"
+pytest-mock = "^3.14.0"
+pytest-asyncio = "^0.25.3"
+coverage = "^7.6.10"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
