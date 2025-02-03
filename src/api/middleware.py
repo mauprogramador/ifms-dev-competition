@@ -36,13 +36,11 @@ class TracingTimeExceptionHandlerMiddleware(BaseHTTPMiddleware):
             LOG.error(message)
             LOG.exception(error)
 
-            htt_error = HTTPError(message, error=error)
-
             response = ErrorJSON(
                 request,
                 HTTPStatus.INTERNAL_SERVER_ERROR,
                 format_error(error, message),
-                htt_error.errors,
+                HTTPError.get_error_details(error),
             )
 
         process_time = perf_counter() - start_time

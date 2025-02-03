@@ -116,20 +116,27 @@ class HTTPError(FastAPIHTTPException):
             code = HTTPStatus.INTERNAL_SERVER_ERROR
 
         if error is not None:
-            errors = {"type": type(error).__name__}
-            traceback = exc_info()[2]
+            self.errors = self.get_error_details(error)
+        else:
+            self.errors = None
 
-            if traceback is not None:
-                file_path, line, _, _ = extract_tb(traceback)[-1]
-                errors.setdefault("file", Path(file_path).name)
-                errors.setdefault("line", line)
-
-            if isinstance(error, FastAPIHTTPException):
-                errors.setdefault("detail", error.detail)
-                errors.setdefault("status_code", error.status_code)
-
-            else:
-                errors.setdefault("detail", get_error_message(error))
-
-        self.errors = [errors] if error is not None else None
         super().__init__(code, message)
+
+    @classmethod
+    def get_error_details(cls, error: Exception) -> list[dict[str, str]]:
+        errors = {"type": type(error).__name__}
+        traceback = exc_info()[2]
+
+        if traceback is not None:
+            file_path, line, _, _ = extract_tb(traceback)[-1]
+            errors.setdefault("file", Path(file_path).name)
+            errors.setdefault("line", line)
+
+        if isinstance(error, FastAPIHTTPException):
+            errors.setdefault("detail", error.detail)
+            errors.setdefault("status_code", error.status_code)
+
+        else:
+            errors.setdefault("detail", get_error_message(error))
+
+        return [errors]
