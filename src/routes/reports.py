@@ -6,7 +6,11 @@ from fastapi.routing import APIRouter
 from src.api.presenters import SuccessJSON, SuccessResponse
 from src.common.types import DynamicPath, OperationPath, RetrieveFileQuery
 from src.core.config import LIMIT, LIMITER, LOG, ROUTE_PREFIX
-from src.repository import ReportRepository
+from src.use_cases.reports import (
+    dynamic_reports,
+    file_report,
+    operation_reports,
+)
 
 router = APIRouter(prefix=ROUTE_PREFIX, tags=["Reports"])
 
@@ -18,11 +22,11 @@ router = APIRouter(prefix=ROUTE_PREFIX, tags=["Reports"])
     response_model=SuccessResponse,
 )
 @LIMITER.limit(LIMIT)
-async def dynamic_report(
+async def api_dynamic_reports(
     request: Request, dynamic: DynamicPath
 ) -> SuccessJSON:
     LOG.debug({"dynamic": dynamic})
-    return await ReportRepository.get_dynamic_reports(request, dynamic)
+    return await dynamic_reports(request, dynamic)
 
 
 @router.get(
@@ -32,11 +36,11 @@ async def dynamic_report(
     response_model=SuccessResponse,
 )
 @LIMITER.limit(LIMIT)
-async def file_report(
+async def api_file_report(
     request: Request, dynamic: DynamicPath, query: RetrieveFileQuery
 ) -> SuccessJSON:
     LOG.debug({"dynamic": dynamic, "query": query.model_dump()})
-    return await ReportRepository.get_file_report(request, dynamic, query)
+    return await file_report(request, dynamic, query)
 
 
 @router.get(
@@ -46,10 +50,8 @@ async def file_report(
     response_model=SuccessResponse,
 )
 @LIMITER.limit(LIMIT)
-async def operation_report(
+async def api_operation_reports(
     request: Request, dynamic: DynamicPath, operation: OperationPath
 ) -> SuccessJSON:
     LOG.debug({"dynamic": dynamic, "operation": operation.value})
-    return await ReportRepository.get_operation_reports(
-        request, dynamic, operation
-    )
+    return await operation_reports(request, dynamic, operation)
