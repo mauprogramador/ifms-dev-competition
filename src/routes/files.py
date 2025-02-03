@@ -20,7 +20,7 @@ from src.use_cases.files import download_dir_tree, retrieve_file, upload_file
 router = APIRouter(prefix=ROUTE_PREFIX, tags=["Files"])
 
 
-# "/{dynamic}/retrieve-file",
+# NOTE: update back to /retrieve-file
 @router.get(
     "/{dynamic}/retrieve",
     status_code=HTTPStatus.OK,
@@ -41,7 +41,7 @@ async def api_retrieve_file(
     return response
 
 
-# "/{dynamic}/upload-file",
+# NOTE: update back to /upload-file
 @router.post(
     "/{dynamic}/upload",
     status_code=HTTPStatus.OK,

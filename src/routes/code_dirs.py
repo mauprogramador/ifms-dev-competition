@@ -15,7 +15,7 @@ from src.use_cases.code_dirs import (
 router = APIRouter(prefix=ROUTE_PREFIX, tags=["Code Dirs"])
 
 
-# "/{dynamic}/list-code-dirs",
+# NOTE: update back to /list-code-dirs
 @router.get(
     "/{dynamic}/list",
     status_code=HTTPStatus.OK,
@@ -29,7 +29,7 @@ async def api_list_code_dirs(
     return await list_code_dirs(request, dynamic)
 
 
-# "/{dynamic}/add-code-dir",
+# NOTE: update back to /add-code-dir
 @router.post(
     "/{dynamic}/add",
     status_code=HTTPStatus.OK,
@@ -43,7 +43,7 @@ async def api_add_code_dir(
     return await add_code_dir(request, dynamic)
 
 
-# "/{dynamic}/remove-code-dir/{code}",
+# NOTE: update back to /remove-code-dir/{code}
 @router.delete(
     "/{dynamic}/remove/{code}",
     status_code=HTTPStatus.OK,
