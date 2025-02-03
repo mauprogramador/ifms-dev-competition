@@ -1,14 +1,16 @@
 from http import HTTPStatus
 from sqlite3 import Error, connect
 from time import time
+from typing import Any
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException
 
-from src.api.presenters import HTTPError, SuccessJSON
+from src.api.presenters import HTTPError
 from src.common.enums import Operation
 from src.common.params import RetrieveData, UploadData
-from src.core.config import ENV, LOG
+from src.core.config import LOG
 from src.repository import queries
+from src.repository.base_repository import BaseRepository
 from src.repository.dynamic_repository import DynamicRepository
 from src.utils.formaters import (
     format_dynamic_report,
@@ -18,8 +20,7 @@ from src.utils.formaters import (
 )
 
 
-class ReportRepository:
-    __DATABASE = ENV.database_file
+class ReportRepository(BaseRepository):
 
     @classmethod
     def add_report(
@@ -74,9 +75,7 @@ class ReportRepository:
             ) from error
 
     @classmethod
-    async def get_dynamic_reports(
-        cls, request: Request, dynamic: str
-    ) -> SuccessJSON:
+    def get_dynamic_reports(cls, dynamic: str) -> list[dict[str, Any]]:
         try:
             with connect(cls.__DATABASE) as connection:
                 cursor = connection.cursor()
@@ -88,30 +87,18 @@ class ReportRepository:
                 f"Failed getting {dynamic} report", error=error
             ) from error
 
-        LOG.info(f"{dynamic} reports found")
-
         if reports is None or len(reports) == 0 or not all(reports):
             raise HTTPException(
                 HTTPStatus.NOT_FOUND,
                 f"{dynamic} report not found",
             )
 
-        reports = list(map(format_dynamic_report, reports))
-
-        return SuccessJSON(
-            request,
-            f"{dynamic} reports found",
-            {
-                "dynamic": dynamic,
-                "count": len(reports),
-                "reports": reports,
-            },
-        )
+        return list(map(format_dynamic_report, reports))
 
     @classmethod
-    async def get_file_report(
-        cls, request: Request, dynamic: str, query: RetrieveData
-    ) -> SuccessJSON:
+    def get_file_report(
+        cls, dynamic: str, query: RetrieveData
+    ) -> dict[str, str]:
         params = (dynamic, query.code, query.type.value)
 
         try:
@@ -126,31 +113,18 @@ class ReportRepository:
                 error=error,
             ) from error
 
-        LOG.info(f"{query.code} {query.type.value} file report found")
-
         if report is None or len(report) == 0 or not all(report):
             raise HTTPException(
                 HTTPStatus.NOT_FOUND,
                 f"{query.code} {query.type.value} file report not found",
             )
 
-        report = format_file_report(report)
-
-        return SuccessJSON(
-            request,
-            f"{query.code} {query.type.value} operation reports found",
-            {
-                "dynamic": dynamic,
-                "code": query.code,
-                "type": query.type.value,
-                "report": report,
-            },
-        )
+        return format_file_report(report)
 
     @classmethod
-    async def get_operation_reports(
-        cls, request: Request, dynamic: str, operation: Operation
-    ) -> SuccessJSON:
+    def get_operation_reports(
+        cls, dynamic: str, operation: Operation
+    ) -> list[dict[str, Any]]:
         if operation == Operation.ALL:
             sql, params = queries.SELECT_OPERATIONS_REPORT, (dynamic,)
 
@@ -170,8 +144,6 @@ class ReportRepository:
                 error=error,
             ) from error
 
-        LOG.info(f"{operation.value} operation reports found")
-
         if reports is None or len(reports) == 0 or not all(reports):
             raise HTTPException(
                 HTTPStatus.NOT_FOUND,
@@ -181,14 +153,4 @@ class ReportRepository:
         if operation == Operation.ALL:
             reports = list(map(set_operation_to_all, reports))
 
-        reports = list(map(format_operation_report, reports))
-
-        return SuccessJSON(
-            request,
-            f"{operation.value} operation reports found",
-            {
-                "dynamic": dynamic,
-                "count": len(reports),
-                "reports": reports,
-            },
-        )
+        return list(map(format_operation_report, reports))

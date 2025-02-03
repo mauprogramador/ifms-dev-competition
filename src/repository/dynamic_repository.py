@@ -4,12 +4,12 @@ from sqlite3 import Error, connect
 from fastapi import HTTPException
 
 from src.api.presenters import HTTPError
-from src.core.config import DEFAULT_WEIGHT, ENV, LOG
+from src.core.config import DEFAULT_WEIGHT, LOG
 from src.repository import queries
+from src.repository.base_repository import BaseRepository
 
 
-class DynamicRepository:
-    __DATABASE = ENV.database_file
+class DynamicRepository(BaseRepository):
 
     @classmethod
     def add_dynamic(cls, dynamic: str) -> None:
