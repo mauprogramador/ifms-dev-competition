@@ -25,7 +25,6 @@ async def lock_requests(
     request: Request, dynamic: str, lock_status: LockStatus
 ) -> SuccessJSON:
     DynamicRepository.set_lock_status(dynamic, lock_status.boolean)
-
     LOG.info(f"{dynamic} lock requests set to {lock_status.name}")
 
     return SuccessJSON(
@@ -79,6 +78,12 @@ async def save_answer_key(
     return SuccessJSON(
         request,
         f"Answer key image {ANSWER_KEY_FILENAME} saved",
+        {
+            "dynamic": dynamic,
+            "filename": ANSWER_KEY_FILENAME,
+            "type": "image/png",
+            "size": image.size,
+        },
     )
 
 
@@ -159,5 +164,7 @@ async def clean_files(request: Request, dynamic: str) -> SuccessJSON:
     LOG.info(f"{dynamic} dynamic files cleaned and images removed")
 
     return SuccessJSON(
-        request, f"{dynamic} dynamic files cleaned and images removed"
+        request,
+        f"{dynamic} dynamic files cleaned and images removed",
+        {"dynamic": dynamic},
     )
