@@ -65,8 +65,7 @@ class Logging:
             file_handler = RotatingFileHandler(
                 filename=filename,
                 mode="a",
-                maxBytes=5,
-                # maxBytes=50000,
+                maxBytes=50000,
                 backupCount=15,
                 encoding="utf-8",
             )
