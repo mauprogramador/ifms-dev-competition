@@ -2,7 +2,6 @@ import cv2  # pylint: disable=w0611 # noqa: F401
 import fastapi  # pylint: disable=w0611 # noqa: F401
 import itsdangerous  # pylint: disable=w0611 # noqa: F401
 import numpy  # pylint: disable=w0611 # noqa: F401
-import PIL  # pylint: disable=w0611 # noqa: F401
 import pydantic  # pylint: disable=w0611 # noqa: F401
 import pydantic_settings  # pylint: disable=w0611 # noqa: F401
 import selenium  # pylint: disable=w0611 # noqa: F401
