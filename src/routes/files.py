@@ -14,7 +14,7 @@ from src.common.types import (
 )
 from src.core.config import LIMIT, LIMITER, LOG, ROUTE_PREFIX
 from src.repository import ReportRepository
-from src.use_cases.compare_similarity import compare_similarity
+from src.use_cases.compare_similarity import Similarity
 from src.use_cases.files import download_dir_tree, retrieve_file, upload_file
 
 router = APIRouter(prefix=ROUTE_PREFIX, tags=["Files"])
@@ -59,7 +59,7 @@ async def api_upload_file(
 
     if form.type == FileType.CSS:
         try:
-            similarity = await compare_similarity(dynamic, form.code)
+            similarity = await Similarity().compare(dynamic, form.code)
         except Exception as error:  # pylint: disable=W0718
             LOG.error("Failed to compare page to answer key")
             LOG.exception(error)
