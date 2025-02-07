@@ -1,8 +1,10 @@
 from http import HTTPStatus
+from io import BytesIO
 from os import remove
 from pathlib import Path
 from shutil import copy2
 
+from cv2 import imencode, imread
 from fastapi import HTTPException
 from pytest import mark, raises
 
@@ -15,14 +17,18 @@ from src.core.config import (
 )
 from src.repository.dynamic_repository import DynamicRepository
 from src.repository.report_repository import ReportRepository
+from src.utils.formaters import get_size
 from tests.mocks import (
     ANSWER_KEY_PATH,
     CLIENT,
     SHUTIL_COPY2_MOCK,
+    FAILED_WEB_FILES_MOCK,
+    CSS_CONTENT,
     DATABASE,
     DYNAMIC,
     DYNAMIC_IMG_PATH,
     DYNAMIC_WEB_PATH,
+    HTML_CONTENT,
     IMAGE_PATH,
     LOCK_REQUESTS_PARAMS,
     WEIGHT,
@@ -60,21 +66,84 @@ async def test_set_weight():
 
 @mark.order(8)
 @mark.asyncio
-async def test_save_answer_key():
+async def test_save_answer_key_from_image():
     url = f"{ROUTE_PREFIX}/{DYNAMIC}/answer-key"
-    image = Image.open(IMAGE_PATH)
+    image = imread(IMAGE_PATH)
 
-    with open(IMAGE_PATH, "rb") as file:
-        file_data = ("test.png", file, "image/png")
-        res = CLIENT.post(url, files={"file": file_data})
+    _, img_encoded = imencode(".png", image)
+    image_bytes = img_encoded.tobytes()
+    file_data = ("test.png", BytesIO(image_bytes), "image/png")
+
+    assert not ANSWER_KEY_PATH.exists()
+    res = CLIENT.post(url, files={"image": file_data})
 
     assert res.status_code == HTTPStatus.OK
-    assert DynamicRepository.get_size(DYNAMIC) == image.size
+    assert DynamicRepository.get_size(DYNAMIC) == get_size(image)
+
+    assert ANSWER_KEY_PATH.exists()
+    ANSWER_KEY_PATH.unlink(missing_ok=True)
+
+    res = res.json()
+    assert res["success"] and res["code"] == HTTPStatus.OK
+    assert tuple(res["data"]["size"]) == get_size(image)
+
+
+@mark.order(9)
+@mark.asyncio
+async def test_save_answer_key_failed_web_files():
+    url = f"{ROUTE_PREFIX}/{DYNAMIC}/answer-key"
+    image = imread(IMAGE_PATH)
+
+    _, img_encoded = imencode(".png", image)
+    image_bytes = img_encoded.tobytes()
+
+    file_data = ("test.png", BytesIO(image_bytes), "image/png")
+    data = {"html": HTML_CONTENT, "css": CSS_CONTENT}
+
+    index_path = DYNAMIC_WEB_PATH / FileType.HTML.file
+    css_path = DYNAMIC_WEB_PATH / FileType.CSS.file
+
+    assert not index_path.exists() and not css_path.exists()
+    assert not ANSWER_KEY_PATH.exists()
+
+    with FAILED_WEB_FILES_MOCK as mock:
+        res = CLIENT.post(url, data=data, files={"image": file_data})
+        mock.assert_called_once()
+
+    assert res.status_code == HTTPStatus.OK
+    assert DynamicRepository.get_size(DYNAMIC) == get_size(image)
+
+    assert ANSWER_KEY_PATH.exists()
+    ANSWER_KEY_PATH.unlink(missing_ok=True)
+
+    res = res.json()
+    assert res["success"] and res["code"] == HTTPStatus.OK
+    assert tuple(res["data"]["size"]) == get_size(image)
+
+
+@mark.order(10)
+@mark.asyncio
+async def test_save_answer_key_from_web_files():
+    url = f"{ROUTE_PREFIX}/{DYNAMIC}/answer-key"
+    data = {"html": HTML_CONTENT, "css": CSS_CONTENT}
+
+    index_path = DYNAMIC_WEB_PATH / FileType.HTML.file
+    css_path = DYNAMIC_WEB_PATH / FileType.CSS.file
+
+    assert not index_path.exists() and not css_path.exists()
+    assert not ANSWER_KEY_PATH.exists()
+
+    res = CLIENT.post(url, data=data)
+    assert res.status_code == HTTPStatus.OK
+    size = DynamicRepository.get_size(DYNAMIC)
+
+    assert len(css_path.read_text("utf-8")) > 0
+    assert len(css_path.read_text("utf-8")) > 0
     assert ANSWER_KEY_PATH.exists()
 
     res = res.json()
     assert res["success"] and res["code"] == HTTPStatus.OK
-    assert tuple(res["data"]["size"]) == image.size
+    assert tuple(res["data"]["size"]) == size
 
 
 @mark.order(17)
