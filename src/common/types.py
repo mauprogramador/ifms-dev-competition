@@ -1,13 +1,14 @@
 from tempfile import _TemporaryFileWrapper
 from typing import Annotated
 
-from fastapi import Depends, File, Form, Path, Query, UploadFile
+from fastapi import Depends, Form, Path, Query
 from pydantic import AfterValidator
 
 from src.common.enums import LockStatus, Operation
 from src.common.params import (
     CreateNewDynamic,
     RetrieveData,
+    UploadAnswerKey,
     UploadData,
     get_temp_file,
 )
@@ -29,11 +30,6 @@ NewDynamicForm = Annotated[
     Form(description="Add a new dynamic and its teams code dirs"),
 ]
 
-AnswerKeyFile = Annotated[
-    UploadFile,
-    File(media_type="image/*", description="Answer Key image"),
-]
-
 CodePath = Annotated[
     Annotated[str, AfterValidator(format_code)],
     Path(
@@ -50,6 +46,11 @@ TempFile = Annotated[_TemporaryFileWrapper, Depends(get_temp_file)]
 RetrieveFileQuery = Annotated[RetrieveData, Query(description="Retrieve")]
 
 UploadFileForm = Annotated[UploadData, Form(description="Upload")]
+
+UploadAnswerKeyForm = Annotated[
+    UploadAnswerKey,
+    Form(media_type="multipart/form-data", description="Upload"),
+]
 
 OperationPath = Annotated[Operation, Path(description="Operation")]
 

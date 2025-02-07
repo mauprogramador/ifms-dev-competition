@@ -1,5 +1,6 @@
 from tempfile import NamedTemporaryFile
 
+from fastapi import File, UploadFile
 from pydantic import BaseModel, Field, field_validator
 
 from src.common.enums import FileType
@@ -24,7 +25,7 @@ class RetrieveData(BaseModel):
 
 class UploadData(RetrieveData):
     file: str = Field(
-        description="File to exchange (HTML or CSS)",
+        description="File to upload (HTML or CSS)",
         min_length=1,
         examples=["<html>...<html>"],
     )
@@ -49,6 +50,34 @@ class CreateNewDynamic(BaseModel):
     @classmethod
     def format_dynamic_name(cls, name: str) -> str:
         return name.strip().upper().replace("-", "_").replace(" ", "_")
+
+
+class UploadAnswerKey(BaseModel):
+    image: UploadFile | None = File(
+        default=None,
+        media_type="image/*",
+        description="Answer-key image",
+    )
+    html: str | None = Field(
+        default=None,
+        description="Answer-key HTML",
+        min_length=1,
+        examples=["<html>...<html>"],
+    )
+    css: str | None = Field(
+        default=None,
+        description="Answer-key CSS",
+        min_length=1,
+        examples=["* { margin: 0; }"],
+    )
+
+    @property
+    def fields(self) -> bool:
+        return any((self.image, self.html, self.css))
+
+    @property
+    def web_fields(self) -> bool:
+        return all((self.html, self.css))
 
 
 async def get_temp_file():
