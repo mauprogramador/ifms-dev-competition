@@ -1,16 +1,13 @@
 from http import HTTPStatus
-from io import BytesIO
 from pathlib import Path
 from shutil import copy2
 from time import strftime
 
-from fastapi import HTTPException, Request, UploadFile
-from PIL import Image
+from fastapi import HTTPException, Request
 
 from src.api.presenters import HTTPError, SuccessJSON
 from src.common.enums import FileType, LockStatus
 from src.core.config import (
-    ANSWER_KEY_FILENAME,
     DIFF_FILENAME,
     ENV,
     IMG_DIR,
@@ -44,44 +41,6 @@ async def set_weight(
         request,
         f"Score weight set to {weight}",
         {"weight": weight},
-    )
-
-
-async def save_answer_key(
-    request: Request, dynamic: str, file: UploadFile
-) -> SuccessJSON:
-    if file.content_type and not file.content_type.startswith("image/"):
-        raise HTTPException(
-            HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
-            "Answer-Key file must be an image",
-        )
-
-    try:
-        dynamic_dir = IMG_DIR / dynamic
-        dynamic_dir.mkdir(parents=True, exist_ok=True)
-        file_path = dynamic_dir / ANSWER_KEY_FILENAME
-
-        content = await file.read()
-        image = Image.open(BytesIO(content))
-        image.save(file_path, format="PNG")
-
-    except Exception as error:
-        raise HTTPError(
-            f"Error in writing {ANSWER_KEY_FILENAME}", error=error
-        ) from error
-
-    DynamicRepository.set_size(dynamic, image.size)
-    LOG.info(f"Answer-Key image {image.size} saved in PNG")
-
-    return SuccessJSON(
-        request,
-        f"Answer key image {ANSWER_KEY_FILENAME} saved",
-        {
-            "dynamic": dynamic,
-            "filename": ANSWER_KEY_FILENAME,
-            "type": "image/png",
-            "size": image.size,
-        },
     )
 
 

@@ -4,15 +4,21 @@ from fastapi import Request
 from fastapi.routing import APIRouter
 
 from src.api.presenters import SuccessJSON, SuccessResponse
-from src.common.types import AnswerKeyFile, DynamicPath, LockQuery, WeightQuery
+from src.common.types import (
+    DynamicPath,
+    LockQuery,
+    UploadAnswerKeyForm,
+    WeightQuery,
+)
 from src.core.config import LOG, ROUTE_PREFIX
 from src.use_cases.admin import (
     clean_files,
     clean_reports,
     lock_requests,
-    save_answer_key,
     set_weight,
 )
+from src.use_cases.answer_key import AnswerKey
+
 
 router = APIRouter(prefix=ROUTE_PREFIX, tags=["Admin"])
 
@@ -50,16 +56,10 @@ async def api_set_weight(
     response_model=SuccessResponse,
 )
 async def api_save_answer_key(
-    request: Request, dynamic: DynamicPath, file: AnswerKeyFile
+    request: Request, dynamic: DynamicPath, form: UploadAnswerKeyForm
 ) -> SuccessJSON:
-    LOG.debug(
-        {
-            "dynamic": dynamic,
-            "filename": file.filename,
-            "content_type": file.content_type,
-        }
-    )
-    return await save_answer_key(request, dynamic, file)
+    LOG.debug({"dynamic": dynamic, "form": form.model_dump()})
+    return await AnswerKey().save(request, dynamic, form)
 
 
 @router.delete(
