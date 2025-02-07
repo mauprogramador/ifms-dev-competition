@@ -8,6 +8,10 @@ class BaseRepository:
     _DATABASE = ENV.database_file
 
     @classmethod
+    def set_database(cls, database: str) -> None:
+        cls._DATABASE = database
+
+    @classmethod
     def create_tables(cls) -> None:
         try:
             with connect(cls._DATABASE) as connection:
