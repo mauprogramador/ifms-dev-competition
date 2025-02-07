@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from pathlib import Path
 
 from cv2 import (
     COLOR_BGR2GRAY,
@@ -41,7 +40,7 @@ async def compare_similarity(
     code: str,
 ) -> float:
 
-    dynamic_dir = Path(WEB_DIR, dynamic, code, FileType.HTML.file)
+    dynamic_dir = WEB_DIR / dynamic / code / FileType.HTML.file
 
     if not dynamic_dir.exists():
         raise HTTPException(
@@ -64,14 +63,14 @@ async def compare_similarity(
             f"Error in getting {dynamic} {code} screenshot", error=error
         ) from error
 
-    img_dir = Path(IMG_DIR, dynamic, code)
+    img_dir = IMG_DIR / dynamic / code
     img_dir.mkdir(parents=True, exist_ok=True)
 
     array_screenshot = frombuffer(binary_screenshot, dtype=uint8)
     screenshot = imdecode(array_screenshot, IMREAD_COLOR)
 
-    screenshot_path = Path(img_dir, SCREENSHOT_FILENAME)
-    answer_key_path = Path(IMG_DIR, dynamic, ANSWER_KEY_FILENAME)
+    screenshot_path = img_dir / SCREENSHOT_FILENAME
+    answer_key_path = IMG_DIR / dynamic / ANSWER_KEY_FILENAME
 
     if not answer_key_path.exists():
         LOG.error("Answer-Key image not found")
@@ -121,7 +120,7 @@ async def compare_similarity(
         white_image = full_like(answer_key, 255)
         diff[black_pixels_mask] = white_image[black_pixels_mask]
 
-        diff_path = Path(IMG_DIR, dynamic, code, DIFF_FILENAME)
+        diff_path = IMG_DIR / dynamic / code / DIFF_FILENAME
         imwrite(str(diff_path), diff)
 
         LOG.debug(

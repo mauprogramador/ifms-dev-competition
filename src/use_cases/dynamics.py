@@ -26,7 +26,7 @@ async def list_dynamics(request: Request) -> SuccessJSON:
 
 async def add_dynamic(request: Request, form: CreateNewDynamic) -> SuccessJSON:
     try:
-        dynamic_dir = Path(WEB_DIR, form.name)
+        dynamic_dir = WEB_DIR / form.name
         dynamic_dir.mkdir(parents=True, exist_ok=True)
 
         dirs_count = len(list(filter(Path.is_dir, dynamic_dir.iterdir())))
@@ -43,7 +43,7 @@ async def add_dynamic(request: Request, form: CreateNewDynamic) -> SuccessJSON:
         for _ in range(count):
             dir_code = "".join(sample(ascii_uppercase, k=4))
 
-            dir_path = Path(dynamic_dir, dir_code)
+            dir_path = dynamic_dir / dir_code
             dir_path.mkdir(parents=True, exist_ok=True)
 
             index_path = dir_path / FileType.HTML.file
@@ -72,26 +72,26 @@ async def add_dynamic(request: Request, form: CreateNewDynamic) -> SuccessJSON:
 
 
 async def remove_dynamic(request: Request, dynamic: str) -> SuccessJSON:
-    dynamic_dir_path = Path(WEB_DIR, dynamic)
+    dynamic_dir = WEB_DIR / dynamic
 
-    if not dynamic_dir_path.exists():
+    if not dynamic_dir.exists():
         raise HTTPException(
             HTTPStatus.NOT_FOUND,
             f"Dynamic {dynamic} dir not found",
         )
 
     try:
-        rmtree(dynamic_dir_path)
+        rmtree(dynamic_dir)
     except OSError as error:
         raise HTTPError(
             f"Error in removing dynamic dir {dynamic}", error=error
         ) from error
 
     DynamicRepository.remove_dynamic(dynamic)
-    dynamic_dir_path = Path(IMG_DIR, dynamic)
+    dynamic_dir = IMG_DIR / dynamic
 
-    if dynamic_dir_path.exists():
-        rmtree(dynamic_dir_path)
+    if dynamic_dir.exists():
+        rmtree(dynamic_dir)
 
     LOG.info(f"Dynamic {dynamic} removed")
 

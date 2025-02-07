@@ -41,7 +41,7 @@ class Logging:
     __LOGGER_NAME = "ifms.dev.competition"
     __FMT = "%(asctime)s %(message)s"
     __DATEFMT = "%Y-%m-%d %H:%M:%S"
-    __DIR = ".logs"
+    __DIR = Path(".logs")
 
     def __init__(
         self, host: str, port: int, logging_file: bool, debug: bool
@@ -59,8 +59,8 @@ class Logging:
         self.__logger.addHandler(self.__stream_handler)
 
         if logging_file:
-            Path(self.__DIR).mkdir(parents=True, exist_ok=True)
-            filename = Path(self.__DIR, "records_0.log")
+            self.__DIR.mkdir(parents=True, exist_ok=True)
+            filename = self.__DIR / "records_0.log"
 
             file_handler = RotatingFileHandler(
                 filename=filename,

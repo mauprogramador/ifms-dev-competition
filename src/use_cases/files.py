@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from pathlib import Path
 from tempfile import _TemporaryFileWrapper
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -20,15 +19,15 @@ async def retrieve_file(
             HTTPStatus.LOCKED, "Request sending has not started yet"
         )
 
-    code_dir_path = Path(WEB_DIR, dynamic, query.code)
+    code_dir = WEB_DIR / dynamic / query.code
 
-    if not code_dir_path.exists():
+    if not code_dir.exists():
         raise HTTPException(
             HTTPStatus.NOT_FOUND,
             f"Code dir {query.code} not found",
         )
 
-    file_path = Path(code_dir_path, query.type.file)
+    file_path = code_dir / query.type.file
 
     try:
         with open(file_path, mode="r", encoding="utf-8") as file:
@@ -62,14 +61,14 @@ async def upload_file(
             HTTPStatus.LOCKED, "Request sending has not started yet"
         )
 
-    code_dir_path = Path(WEB_DIR, dynamic, form.code)
+    code_dir = WEB_DIR / dynamic / form.code
 
-    if not code_dir_path.exists():
+    if not code_dir.exists():
         raise HTTPException(
             HTTPStatus.NOT_FOUND, f"Code dir {form.code} not found"
         )
 
-    file_path = Path(code_dir_path, form.type.file)
+    file_path = code_dir / form.type.file
 
     try:
         with open(file_path, mode="w", encoding="utf-8") as file:
@@ -105,7 +104,7 @@ async def download_dir_tree(
             compresslevel=9,
         ) as zip_archive:
 
-            dynamic_dir = Path(WEB_DIR, dynamic)
+            dynamic_dir = WEB_DIR / dynamic
 
             for sub_dir in dynamic_dir.rglob("*"):
                 arcname = sub_dir.relative_to(dynamic_dir)

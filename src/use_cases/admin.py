@@ -57,9 +57,7 @@ async def save_answer_key(
         )
 
     try:
-        IMG_DIR.mkdir(parents=True, exist_ok=True)
         dynamic_dir = IMG_DIR / dynamic
-
         dynamic_dir.mkdir(parents=True, exist_ok=True)
         file_path = dynamic_dir / ANSWER_KEY_FILENAME
 
@@ -122,13 +120,13 @@ async def clean_files(request: Request, dynamic: str) -> SuccessJSON:
         )
 
     try:
-        for code_dir in list(filter(Path.is_dir, dynamic_dir.iterdir())):
+        for code_dir in filter(Path.is_dir, dynamic_dir.iterdir()):
 
-            index_path = dynamic_dir / code_dir / FileType.HTML.file
+            index_path = code_dir / FileType.HTML.file
             with open(index_path, mode="w", encoding="utf-8"):
                 pass
 
-            css_path = dynamic_dir / code_dir / FileType.CSS.file
+            css_path = code_dir / FileType.CSS.file
             with open(css_path, mode="w", encoding="utf-8"):
                 pass
 
@@ -147,13 +145,9 @@ async def clean_files(request: Request, dynamic: str) -> SuccessJSON:
         return SuccessJSON(request, f"{dynamic} dynamic files cleaned")
 
     try:
-        for code_dir in list(filter(Path.is_dir, dynamic_dir.iterdir())):
-
-            diff_dir = dynamic_dir / code_dir / DIFF_FILENAME
-            diff_dir.unlink(missing_ok=True)
-
-            screenshot_dir = dynamic_dir / code_dir / SCREENSHOT_FILENAME
-            screenshot_dir.unlink(missing_ok=True)
+        for code_dir in filter(Path.is_dir, dynamic_dir.iterdir()):
+            (code_dir / DIFF_FILENAME).unlink(missing_ok=True)
+            (code_dir / SCREENSHOT_FILENAME).unlink(missing_ok=True)
 
     except OSError as error:
         raise HTTPError(
