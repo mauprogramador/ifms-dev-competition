@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 from zipfile import ZipInfo
 
 from fastapi.testclient import TestClient
@@ -12,7 +13,7 @@ from src.core.config import (
     WEB_DIR,
 )
 from src.use_cases.admin import clean_reports
-from src.use_cases.admin import copy2
+from src.use_cases.answer_key import AnswerKey
 
 
 CLIENT = TestClient(app)
@@ -21,7 +22,17 @@ DATABASE = "tests/test_database.db"
 IMAGE_PATH = "tests/test.png"
 
 DYNAMIC = "TEST_DYNAMIC_PYTEST"
-COPY2_MOCK = f"{clean_reports.__module__}.{copy2.__qualname__}"
+
+SHUTIL_COPY2_MOCK = patch(
+    f"{clean_reports.__module__}.copy2",
+    autospec=True,
+    side_effect=None,
+)
+FAILED_WEB_FILES_MOCK = patch.object(
+    AnswerKey,
+    f"_{AnswerKey.__name__}__save_from_web_fields",
+    side_effect=Exception("Ops"),
+)
 
 WEIGHT = 123
 COUNT = 1

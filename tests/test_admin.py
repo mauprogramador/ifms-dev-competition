@@ -2,7 +2,6 @@ from http import HTTPStatus
 from os import remove
 from pathlib import Path
 from shutil import copy2
-from unittest.mock import patch
 
 from fastapi import HTTPException
 from pytest import mark, raises
@@ -19,7 +18,7 @@ from src.repository.report_repository import ReportRepository
 from tests.mocks import (
     ANSWER_KEY_PATH,
     CLIENT,
-    COPY2_MOCK,
+    SHUTIL_COPY2_MOCK,
     DATABASE,
     DYNAMIC,
     DYNAMIC_IMG_PATH,
@@ -78,12 +77,12 @@ async def test_save_answer_key():
     assert tuple(res["data"]["size"]) == image.size
 
 
-@mark.order(15)
+@mark.order(17)
 @mark.asyncio
 async def test_clean_reports():
     assert len(ReportRepository.get_dynamic_reports(DYNAMIC)) > 1
 
-    with patch(COPY2_MOCK, autospec=True) as mock:
+    with SHUTIL_COPY2_MOCK as mock:
         res = CLIENT.delete(f"{ROUTE_PREFIX}/{DYNAMIC}/clean-reports")
         assert res.status_code == HTTPStatus.OK
 
@@ -108,7 +107,7 @@ async def test_clean_reports():
     assert res["data"]["backup_file"] == backup_file
 
 
-@mark.order(16)
+@mark.order(18)
 @mark.asyncio
 async def test_clean_files(session_data):
     code = session_data["code"]
