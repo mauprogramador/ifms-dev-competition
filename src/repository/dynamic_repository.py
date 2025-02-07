@@ -15,7 +15,7 @@ class DynamicRepository(BaseRepository):
     def add_dynamic(cls, dynamic: str) -> None:
         params = (dynamic, True, DEFAULT_WEIGHT)
         try:
-            with connect(cls.__DATABASE) as connection:
+            with connect(cls._DATABASE) as connection:
                 cursor = connection.cursor()
                 cursor.execute(queries.INSERT_DYNAMIC, params)
                 connection.commit()
@@ -30,7 +30,7 @@ class DynamicRepository(BaseRepository):
     @classmethod
     def remove_dynamic(cls, dynamic: str) -> None:
         try:
-            with connect(cls.__DATABASE) as connection:
+            with connect(cls._DATABASE) as connection:
                 cursor = connection.cursor()
                 cursor.execute(queries.DELETE_DYNAMIC, (dynamic,))
                 connection.commit()
@@ -45,7 +45,7 @@ class DynamicRepository(BaseRepository):
     @classmethod
     def get_lock_status(cls, dynamic: str) -> bool:
         try:
-            with connect(cls.__DATABASE) as connection:
+            with connect(cls._DATABASE) as connection:
                 cursor = connection.cursor()
                 cursor.execute(queries.SELECT_LOCK_STATUS, (dynamic,))
                 lock = cursor.fetchone()
@@ -68,7 +68,7 @@ class DynamicRepository(BaseRepository):
     @classmethod
     def set_lock_status(cls, dynamic: str, lock: int) -> None:
         try:
-            with connect(cls.__DATABASE) as connection:
+            with connect(cls._DATABASE) as connection:
                 cursor = connection.cursor()
                 cursor.execute(queries.UPDATE_LOCK_STATUS, (lock, dynamic))
                 connection.commit()
@@ -82,7 +82,7 @@ class DynamicRepository(BaseRepository):
     @classmethod
     def get_size(cls, dynamic: str) -> tuple[int, int]:
         try:
-            with connect(cls.__DATABASE) as connection:
+            with connect(cls._DATABASE) as connection:
                 cursor = connection.cursor()
                 cursor.execute(queries.SELECT_SIZE, (dynamic,))
                 dimensions = cursor.fetchone()
@@ -108,7 +108,7 @@ class DynamicRepository(BaseRepository):
     def set_size(cls, dynamic: str, size: tuple[int, int]) -> None:
         dimensions = f"{size[0]}x{size[1]}"
         try:
-            with connect(cls.__DATABASE) as connection:
+            with connect(cls._DATABASE) as connection:
                 cursor = connection.cursor()
                 cursor.execute(queries.UPDATE_SIZE, (dimensions, dynamic))
                 connection.commit()
@@ -123,7 +123,7 @@ class DynamicRepository(BaseRepository):
     @classmethod
     def get_weight(cls, dynamic: str) -> int:
         try:
-            with connect(cls.__DATABASE) as connection:
+            with connect(cls._DATABASE) as connection:
                 cursor = connection.cursor()
                 cursor.execute(queries.SELECT_WEIGHT, (dynamic,))
                 weight = cursor.fetchone()
@@ -146,7 +146,7 @@ class DynamicRepository(BaseRepository):
     @classmethod
     def set_weight(cls, dynamic: str, weight: int) -> None:
         try:
-            with connect(cls.__DATABASE) as connection:
+            with connect(cls._DATABASE) as connection:
                 cursor = connection.cursor()
                 cursor.execute(queries.UPDATE_WEIGHT, (weight, dynamic))
                 connection.commit()

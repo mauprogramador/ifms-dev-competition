@@ -5,16 +5,12 @@ from src.repository import queries
 
 
 class BaseRepository:
-    __DATABASE = ENV.database_file
-
-    @classmethod
-    def set_database(cls, database: str) -> None:
-        cls.__DATABASE = database
+    _DATABASE = ENV.database_file
 
     @classmethod
     def create_tables(cls) -> None:
         try:
-            with connect(cls.__DATABASE) as connection:
+            with connect(cls._DATABASE) as connection:
                 cursor = connection.cursor()
                 cursor.execute(queries.CREATE_REPORT_TABLE)
                 cursor.execute(queries.CREATE_DYNAMIC_TABLE)

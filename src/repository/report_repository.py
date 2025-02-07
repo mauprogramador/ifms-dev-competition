@@ -48,7 +48,7 @@ class ReportRepository(BaseRepository):
         )
 
         try:
-            with connect(cls.__DATABASE) as connection:
+            with connect(cls._DATABASE) as connection:
                 cursor = connection.cursor()
                 cursor.execute(queries.INSERT_REPORT, params)
                 connection.commit()
@@ -62,7 +62,7 @@ class ReportRepository(BaseRepository):
     @classmethod
     def clean_reports(cls, dynamic: str) -> None:
         try:
-            with connect(cls.__DATABASE) as connection:
+            with connect(cls._DATABASE) as connection:
                 cursor = connection.cursor()
                 cursor.execute(queries.DELETE_REPORTS, (dynamic,))
                 connection.commit()
@@ -77,7 +77,7 @@ class ReportRepository(BaseRepository):
     @classmethod
     def get_dynamic_reports(cls, dynamic: str) -> list[dict[str, Any]]:
         try:
-            with connect(cls.__DATABASE) as connection:
+            with connect(cls._DATABASE) as connection:
                 cursor = connection.cursor()
                 cursor.execute(queries.SELECT_DYNAMIC_REPORT, (dynamic,))
                 reports = cursor.fetchall()
@@ -102,7 +102,7 @@ class ReportRepository(BaseRepository):
         params = (dynamic, query.code, query.type.value)
 
         try:
-            with connect(cls.__DATABASE) as connection:
+            with connect(cls._DATABASE) as connection:
                 cursor = connection.cursor()
                 cursor.execute(queries.SELECT_FILE_REPORT, params)
                 report = cursor.fetchone()
@@ -133,7 +133,7 @@ class ReportRepository(BaseRepository):
             params = (dynamic, operation.value)
 
         try:
-            with connect(cls.__DATABASE) as connection:
+            with connect(cls._DATABASE) as connection:
                 cursor = connection.cursor()
                 cursor.execute(sql, params)
                 reports = cursor.fetchall()
