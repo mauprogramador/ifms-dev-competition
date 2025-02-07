@@ -23,7 +23,7 @@ async def api_list_dynamics(request: Request) -> SuccessJSON:
 
 @router.post(
     "/add-dynamic",
-    status_code=HTTPStatus.OK,
+    status_code=HTTPStatus.CREATED,
     summary="Adds a new Dynamic and its teams code dirs",
     response_model=SuccessResponse,
 )
