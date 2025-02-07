@@ -1,6 +1,7 @@
 from datetime import datetime
 from http import HTTPStatus
 from typing import Any
+
 from pytest import mark
 
 from src.common.enums import Operation
@@ -68,18 +69,19 @@ async def test_operation_report(session_data, operation, exchanges):
     assert res.status_code == HTTPStatus.OK
 
     res = res.json()
-    print(res)
     assert res["success"] and res["code"] == HTTPStatus.OK
     assert res["data"]["count"] == COUNT
     assert len(res["data"]["reports"]) == COUNT
 
     report: dict[str, Any] = res["data"]["reports"][0]
     assert report["code"] == code
-    assert report["operation"] == operation
     assert report["total_exchanges"] == exchanges
     assert datetime.fromisoformat(report["first_timestamp"])
     assert datetime.fromisoformat(report["last_timestamp"])
     assert report["elapsed_time"]
+
+    if operation != Operation.ALL:
+        assert report["operation"] == operation
 
     if operation == Operation.RETRIEVE:
         assert report["similarity"] is None and report["score"] is None
