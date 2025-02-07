@@ -16,9 +16,7 @@ async def list_code_dirs(request: Request, dynamic: str) -> SuccessJSON:
     if not dynamic_dir.exists():
         raise HTTPException(HTTPStatus.NOT_FOUND, "Root dir not found")
 
-    code_dirs = [
-        path.name for path in dynamic_dir.iterdir() if path.is_dir()
-    ]
+    code_dirs = [path.name for path in dynamic_dir.iterdir() if path.is_dir()]
     LOG.info(f"{dynamic} has {len(code_dirs)} code dirs")
 
     return SuccessJSON(

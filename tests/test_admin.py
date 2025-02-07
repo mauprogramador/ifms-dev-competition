@@ -21,16 +21,16 @@ from src.utils.formaters import get_size
 from tests.mocks import (
     ANSWER_KEY_PATH,
     CLIENT,
-    SHUTIL_COPY2_MOCK,
-    FAILED_WEB_FILES_MOCK,
     CSS_CONTENT,
     DATABASE,
     DYNAMIC,
     DYNAMIC_IMG_PATH,
     DYNAMIC_WEB_PATH,
+    FAILED_WEB_FILES_MOCK,
     HTML_CONTENT,
     IMAGE_PATH,
     LOCK_REQUESTS_PARAMS,
+    SHUTIL_COPY2_MOCK,
     WEIGHT,
 )
 

@@ -4,11 +4,7 @@ from shutil import rmtree
 from pytest import fixture
 
 from src.repository.base_repository import BaseRepository
-from tests.mocks import (
-    DATABASE,
-    DYNAMIC_IMG_PATH,
-    DYNAMIC_WEB_PATH,
-)
+from tests.mocks import DATABASE, DYNAMIC_IMG_PATH, DYNAMIC_WEB_PATH
 
 
 @fixture(scope="session")

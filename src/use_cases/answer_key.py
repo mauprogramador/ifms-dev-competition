@@ -1,4 +1,5 @@
 from http import HTTPStatus
+
 from cv2 import IMREAD_COLOR, imdecode, imwrite
 from fastapi import HTTPException, Request
 from numpy import frombuffer, uint8

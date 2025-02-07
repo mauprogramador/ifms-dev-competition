@@ -19,7 +19,6 @@ from src.use_cases.admin import (
 )
 from src.use_cases.answer_key import AnswerKey
 
-
 router = APIRouter(prefix=ROUTE_PREFIX, tags=["Admin"])
 
 
