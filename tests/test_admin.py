@@ -1,7 +1,9 @@
 from http import HTTPStatus
 from os import remove
 from pathlib import Path
-from PIL import Image
+from shutil import copy2
+from unittest.mock import patch
+
 from fastapi import HTTPException
 from pytest import mark, raises
 
@@ -17,6 +19,8 @@ from src.repository.report_repository import ReportRepository
 from tests.mocks import (
     ANSWER_KEY_PATH,
     CLIENT,
+    COPY2_MOCK,
+    DATABASE,
     DYNAMIC,
     DYNAMIC_IMG_PATH,
     DYNAMIC_WEB_PATH,
@@ -78,8 +82,19 @@ async def test_save_answer_key():
 @mark.asyncio
 async def test_clean_reports():
     assert len(ReportRepository.get_dynamic_reports(DYNAMIC)) > 1
-    res = CLIENT.delete(f"{ROUTE_PREFIX}/{DYNAMIC}/clean-reports")
-    assert res.status_code == HTTPStatus.OK
+
+    with patch(COPY2_MOCK, autospec=True) as mock:
+        res = CLIENT.delete(f"{ROUTE_PREFIX}/{DYNAMIC}/clean-reports")
+        assert res.status_code == HTTPStatus.OK
+
+        backup_file: str = mock.call_args[0][1]  # type:ignore
+        mock.assert_called_once()
+
+    file_path = f"tests/test_{backup_file}"
+    copy2(DATABASE, file_path)
+
+    assert Path(file_path).exists()
+    remove(file_path)
 
     with raises(HTTPException) as error:
         ReportRepository.get_dynamic_reports(DYNAMIC)
@@ -89,9 +104,8 @@ async def test_clean_reports():
     res = res.json()
     assert res["success"] and res["code"] == HTTPStatus.OK
     assert Path(ENV.database_file).exists()
-    assert Path(res["data"]["backup_file"]).exists()
-
-    remove(res["data"]["backup_file"])
+    assert not Path(res["data"]["backup_file"]).exists()
+    assert res["data"]["backup_file"] == backup_file
 
 
 @mark.order(16)

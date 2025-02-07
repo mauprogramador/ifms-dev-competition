@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any
 from zipfile import ZipInfo
+
 from fastapi.testclient import TestClient
 
 from src.api.main import app
@@ -10,16 +11,18 @@ from src.core.config import (
     IMG_DIR,
     WEB_DIR,
 )
+from src.use_cases.admin import clean_reports
+from src.use_cases.admin import copy2
 
 
 CLIENT = TestClient(app)
-ENV_DB_FILE = "DATABASE_FILE"
 
 DATABASE = "tests/test_database.db"
 IMAGE_PATH = "tests/test.png"
 
 DYNAMIC = "TEST_DYNAMIC_PYTEST"
-CODE_DIR = "ABCD"
+COPY2_MOCK = f"{clean_reports.__module__}.{copy2.__qualname__}"
+
 WEIGHT = 123
 COUNT = 1
 
