@@ -35,14 +35,13 @@ class AnswerKey:
             )
 
         self.__form, self.__dynamic = form, dynamic
-        print(form.model_dump())
         dynamic_dir = IMG_DIR / dynamic
         dynamic_dir.mkdir(parents=True, exist_ok=True)
         self.__file_path = str(dynamic_dir / ANSWER_KEY_FILENAME)
 
         if form.web_fields:
             try:
-                self.__from_web_fields()
+                self.__save_from_web_fields()
 
             except Exception as error:  # pylint: disable=W0718
                 if not form.image:
@@ -51,10 +50,10 @@ class AnswerKey:
                         error=error,
                     ) from error
 
-                await self.__from_image_field()
+                await self.__save_from_image_field()
 
         elif form.image:
-            await self.__from_image_field()
+            await self.__save_from_image_field()
 
         DynamicRepository.set_size(dynamic, self.__size)
         LOG.info(f"Answer-Key image {self.__size} saved in PNG")
@@ -70,7 +69,7 @@ class AnswerKey:
             },
         )
 
-    def __from_web_fields(self) -> None:
+    def __save_from_web_fields(self) -> None:
         dynamic_dir = WEB_DIR / self.__dynamic
 
         if not dynamic_dir.exists():
@@ -107,7 +106,7 @@ class AnswerKey:
 
         self.__save_image(binary_screenshot)
 
-    async def __from_image_field(self) -> None:
+    async def __save_from_image_field(self) -> None:
         content_type = self.__form.image.content_type  # type:ignore
         if content_type and not content_type.startswith("image/"):
             raise HTTPException(
