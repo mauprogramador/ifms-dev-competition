@@ -38,7 +38,7 @@ async def test_add_dynamic():
     assert len(tuple(DYNAMIC_WEB_PATH.rglob("*.css"))) == 2
 
 
-@mark.order(17)
+@mark.order(19)
 @mark.asyncio
 async def test_remove_dynamic():
     res = CLIENT.delete(f"{ROUTE_PREFIX}/remove-dynamic/{DYNAMIC}")

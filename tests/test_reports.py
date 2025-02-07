@@ -17,7 +17,7 @@ from tests.mocks import (
 )
 
 
-@mark.order(12)
+@mark.order(14)
 @mark.asyncio
 async def test_dynamic_report(session_data):
     code = session_data["code"]
@@ -40,7 +40,7 @@ async def test_dynamic_report(session_data):
     assert report["score"] == report_score(report["similarity"])
 
 
-@mark.order(13)
+@mark.order(15)
 @mark.parametrize("file_type", FILE_TYPES_PARAMS)
 @mark.asyncio
 async def test_file_report(session_data, file_type):
@@ -59,7 +59,7 @@ async def test_file_report(session_data, file_type):
     assert datetime.fromisoformat(res["data"]["report"]["last_timestamp"])
 
 
-@mark.order(14)
+@mark.order(16)
 @mark.parametrize("operation, exchanges", OPERATION_REPORT_PARAMS)
 @mark.asyncio
 async def test_operation_report(session_data, operation, exchanges):

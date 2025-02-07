@@ -19,7 +19,7 @@ from tests.mocks import (
 )
 
 
-@mark.order(9)
+@mark.order(11)
 @mark.parametrize("file_type, file_content", UPLOAD_FILE_PARAMS)
 @mark.asyncio
 async def test_upload_file(session_data, file_type, file_content):
@@ -55,7 +55,7 @@ async def test_upload_file(session_data, file_type, file_content):
         assert diff_path.exists() and screenshot_path.exists()
 
 
-@mark.order(10)
+@mark.order(12)
 @mark.parametrize("file_type", FILE_TYPES_PARAMS)
 @mark.asyncio
 async def test_retrieve_file(session_data, file_type):
@@ -78,7 +78,7 @@ async def test_retrieve_file(session_data, file_type):
     assert file_path.exists() and len(file_path.read_text("utf-8")) > 0
 
 
-@mark.order(11)
+@mark.order(13)
 @mark.asyncio
 async def test_download():
     res = CLIENT.get(f"{ROUTE_PREFIX}/{DYNAMIC}/download")
@@ -87,5 +87,5 @@ async def test_download():
     assert res.headers["Content-Disposition"].count(f"{DYNAMIC.lower()}.zip")
 
     with ZipFile(BytesIO(res.content), "r") as zip_archive:
-        assert len(zip_archive.filelist) == 6
+        assert len(zip_archive.filelist) == 8
         assert len(zip_file_list(zip_archive.infolist())) == 2
