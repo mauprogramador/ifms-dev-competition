@@ -16,7 +16,6 @@ from src.utils.formaters import (
     format_dynamic_report,
     format_file_report,
     format_operation_report,
-    set_operation_to_all,
 )
 
 
@@ -149,8 +148,5 @@ class ReportRepository(BaseRepository):
                 HTTPStatus.NOT_FOUND,
                 f"Operation report {operation.value} not found",
             )
-
-        if operation == Operation.ALL:
-            reports = list(map(set_operation_to_all, reports))
 
         return list(map(format_operation_report, reports))

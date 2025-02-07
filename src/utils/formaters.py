@@ -2,7 +2,8 @@ from datetime import datetime
 from functools import lru_cache
 from typing import Any
 
-from src.common.enums import Operation
+from cv2.typing import MatLike
+
 from src.core.config import ERROR_MESSAGE
 
 
@@ -32,13 +33,6 @@ def format_dynamic_report(report: tuple) -> dict[str, Any]:
 def format_file_report(report: tuple) -> dict[str, str]:
     last = datetime.fromtimestamp(report[0])
     return {"last_timestamp": last.isoformat()}
-
-
-@lru_cache(maxsize=30)
-def set_operation_to_all(report: tuple) -> tuple:
-    report_list = list(report)
-    report_list[1] = Operation.ALL.value
-    return tuple(report_list)
 
 
 @lru_cache(maxsize=30)
@@ -77,3 +71,7 @@ def format_error(exc: Exception, message: str = None) -> str:
         message = get_error_message(exc)
 
     return f"{type(exc).__name__}: {message}"
+
+
+def get_size(image: MatLike) -> tuple[int, int]:
+    return image.shape[1], image.shape[0]
