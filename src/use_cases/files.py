@@ -124,6 +124,7 @@ async def download_dir_tree(
                 },
                 media_type="application/zip",
                 filename=filename,
+                content_disposition_type=disposition,
             )
 
     except Exception as error:
