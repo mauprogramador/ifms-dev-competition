@@ -14,13 +14,13 @@ from src.repository import DynamicRepository
 
 
 async def list_dynamics(request: Request) -> SuccessJSON:
-    dynamic_dirs = list(filter(Path.is_dir, WEB_DIR.iterdir()))
-    LOG.info(f"There was {len(dynamic_dirs)} dynamics")
+    dynamics = DynamicRepository.get_dynamics()
+    LOG.info(f"Found {len(dynamics)} dynamics")
 
     return SuccessJSON(
         request,
-        "All dynamics teams code dirs",
-        {"count": len(dynamic_dirs), "dynamics": dynamic_dirs},
+        f"Found {len(dynamics)} dynamics",
+        {"count": len(dynamics), "dynamics": dynamics},
     )
 
 

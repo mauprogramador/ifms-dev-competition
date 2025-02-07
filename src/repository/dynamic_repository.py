@@ -28,6 +28,23 @@ class DynamicRepository(BaseRepository):
             ) from error
 
     @classmethod
+    def get_dynamics(cls) -> list[str]:
+        try:
+            with connect(cls._DATABASE) as connection:
+                cursor = connection.cursor()
+                cursor.execute(queries.SELECT_DYNAMICS)
+                dynamics = cursor.fetchall()
+                connection.commit()
+
+        except Error as error:
+            raise HTTPError("Failed listing dynamics", error=error) from error
+
+        if dynamics is None or len(dynamics) == 0 or not all(dynamics):
+            raise HTTPException(HTTPStatus.NOT_FOUND, "Dynamics not found")
+
+        return [dynamic[0] for dynamic in dynamics]
+
+    @classmethod
     def remove_dynamic(cls, dynamic: str) -> None:
         try:
             with connect(cls._DATABASE) as connection:

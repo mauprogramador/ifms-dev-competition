@@ -59,6 +59,7 @@ CREATE_DYNAMIC_TABLE = """
 INSERT_DYNAMIC = """
     INSERT INTO Dynamic (dynamic,lock_requests,weight) VALUES (?, ?, ?);
 """
+SELECT_DYNAMICS = "SELECT dynamic FROM Dynamic ORDER BY id ASC;"
 DELETE_DYNAMIC = "DELETE FROM Dynamic WHERE dynamic=?;"
 SELECT_LOCK_STATUS = "SELECT lock_requests FROM Dynamic WHERE dynamic=?;"
 UPDATE_LOCK_STATUS = "UPDATE Dynamic SET lock_requests=? WHERE dynamic=?;"
