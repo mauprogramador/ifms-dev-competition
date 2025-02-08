@@ -1,5 +1,6 @@
 from datetime import datetime
 from http import HTTPStatus
+from json import dumps
 from pathlib import Path
 from sys import exc_info
 from traceback import extract_tb
@@ -7,10 +8,12 @@ from typing import Any
 
 from fastapi import HTTPException as FastAPIHTTPException
 from fastapi import Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 
-from src.utils.formaters import get_error_message
+from src.core.config import LOG
+from src.utils.formaters import format_error, get_error_message
 
 
 class BaseResponse(BaseModel):
@@ -85,7 +88,14 @@ class ErrorJSON(JSONResponse):
         """Error JSON representation response"""
 
         if errors is not None:
-            pass
+            try:
+                dumps(errors)
+            except Exception as error:  # pylint: disable=W0718
+                errors = jsonable_encoder(errors)
+                message = "Error in serialize errors to JSON"
+
+                LOG.error(format_error(error, message))
+                LOG.exception(error)
 
         content = ErrorResponse(
             success=False,
