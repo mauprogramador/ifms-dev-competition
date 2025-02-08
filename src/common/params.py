@@ -61,15 +61,20 @@ class UploadAnswerKey(BaseModel):
     html: str | None = Field(
         default=None,
         description="Answer-key HTML",
-        min_length=1,
-        examples=["<html>...<html>"],
+        examples=[""],
     )
     css: str | None = Field(
         default=None,
         description="Answer-key CSS",
-        min_length=1,
-        examples=["* { margin: 0; }"],
+        examples=[""],
     )
+
+    @field_validator("image", mode="before")
+    @classmethod
+    def validate_not_send_image(cls, image):
+        if image == "" or isinstance(image, str):
+            return None
+        return image
 
     @property
     def fields(self) -> bool:
