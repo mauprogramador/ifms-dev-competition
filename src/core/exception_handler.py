@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import Any
 
 from fastapi import Request
 from fastapi.exceptions import (
@@ -6,7 +7,7 @@ from fastapi.exceptions import (
     RequestValidationError,
     ResponseValidationError,
 )
-from pydantic_core import ValidationError
+from pydantic_core import PydanticUndefined, ValidationError
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -24,9 +25,9 @@ class ExceptionHandler:
             HTTPError: self.custom_http_error,
             StarletteHTTPException: self.starlette_http_exception,
             HTTPException: self.starlette_http_exception,
-            RequestValidationError: self.request_validation_error,
-            ResponseValidationError: self.validation_error,
-            ValidationError: self.validation_error,
+            RequestValidationError: self.fastapi_validation_error,
+            ResponseValidationError: self.fastapi_validation_error,
+            ValidationError: self.pydantic_validation_error,
             RateLimitExceeded: self.rate_limit_error,
         }
 
@@ -49,10 +50,13 @@ class ExceptionHandler:
             request, exc.status_code, format_error(exc, exc.detail)
         )
 
-    async def request_validation_error(
-        self, request: Request, exc: RequestValidationError
+    async def fastapi_validation_error(
+        self,
+        request: Request,
+        exc: RequestValidationError | ResponseValidationError,
     ) -> ErrorJSON:
-        first_error: dict = exc.errors()[0]
+        errors = list(map(self.__exception_filter, exc.errors()))
+        first_error: dict = errors[0]
         message = first_error.get("msg", ERROR_MESSAGE)
 
         LOG.error(message)
@@ -62,13 +66,14 @@ class ExceptionHandler:
             request,
             HTTPStatus.UNPROCESSABLE_ENTITY,
             format_error(exc, message),
-            exc.errors(),
+            errors,
         )
 
-    async def validation_error(
-        self, request: Request, exc: ResponseValidationError | ValidationError
+    async def pydantic_validation_error(
+        self, request: Request, exc: ValidationError
     ) -> ErrorJSON:
-        first_error: dict = exc.errors()[0]
+        errors = list(map(self.__undefined_filter, exc.errors()))
+        first_error: dict = errors[0]
         message = first_error.get("msg", ERROR_MESSAGE)
 
         LOG.error(message)
@@ -78,7 +83,7 @@ class ExceptionHandler:
             request,
             HTTPStatus.INTERNAL_SERVER_ERROR,
             format_error(exc, message),
-            exc.errors(),
+            errors,
         )
 
     async def rate_limit_error(
@@ -91,3 +96,13 @@ class ExceptionHandler:
             HTTPStatus.TOO_MANY_REQUESTS,
             format_error(exc, message),
         )
+
+    def __undefined_filter(self, item: dict[str, Any]) -> dict[str, Any]:
+        if "input" in item and item["input"] is PydanticUndefined:
+            item["input"] = "PydanticUndefined"
+        return item
+
+    def __exception_filter(self, item: dict[str, Any]) -> dict[str, Any]:
+        if "ctx" in item and isinstance(item["ctx"]["error"], Exception):
+            item["ctx"]["error"] = type(item["ctx"]["error"]).__name__
+        return item

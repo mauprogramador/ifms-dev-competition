@@ -9,7 +9,6 @@ from fastapi import HTTPException as FastAPIHTTPException
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
-from pydantic_core import PydanticUndefined
 
 from src.utils.formaters import get_error_message
 
@@ -76,8 +75,6 @@ class SuccessJSON(JSONResponse):
 class ErrorJSON(JSONResponse):
     """Error JSON representation response"""
 
-    __KEY = "input"
-
     def __init__(
         self,
         request: Request,
@@ -86,8 +83,9 @@ class ErrorJSON(JSONResponse):
         errors: list[dict[str, Any]] | None = None,
     ) -> None:
         """Error JSON representation response"""
+
         if errors is not None:
-            errors = list(map(self.__filter, errors))
+            pass
 
         content = ErrorResponse(
             success=False,
@@ -97,12 +95,8 @@ class ErrorJSON(JSONResponse):
             request=request,
             errors=errors,
         )
-        super().__init__(content.model_dump(), code)
 
-    def __filter(self, item: dict[str, Any]) -> dict[str, Any]:
-        if self.__KEY in item and item[self.__KEY] is PydanticUndefined:
-            item[self.__KEY] = "PydanticUndefined"
-        return item
+        super().__init__(content.model_dump(), code)
 
 
 class HTTPError(FastAPIHTTPException):
