@@ -17,13 +17,14 @@ from src.repository import ReportRepository
 from src.use_cases.compare_similarity import Similarity
 from src.use_cases.files import download_dir_tree, retrieve_file, upload_file
 
-router = APIRouter(prefix=ROUTE_PREFIX, tags=["Files"])
+router = APIRouter(prefix=ROUTE_PREFIX)
 
 
 # NOTE: update back to /retrieve-file
 @router.get(
     "/{dynamic}/retrieve",
     status_code=HTTPStatus.OK,
+    tags=["Files"],
     summary="Retrieves a code dir file",
     response_model=SuccessResponse,
 )
@@ -45,6 +46,7 @@ async def api_retrieve_file(
 @router.post(
     "/{dynamic}/upload",
     status_code=HTTPStatus.OK,
+    tags=["Files"],
     summary="Uploads a code dir file",
     response_model=SuccessResponse,
 )
