@@ -9,12 +9,7 @@ from fastapi import HTTPException
 from pytest import mark, raises
 
 from src.common.enums import FileType
-from src.core.config import (
-    DIFF_FILENAME,
-    ENV,
-    ROUTE_PREFIX,
-    SCREENSHOT_FILENAME,
-)
+from src.core.config import DIFF_FILENAME, ROUTE_PREFIX, SCREENSHOT_FILENAME
 from src.repository.dynamic_repository import DynamicRepository
 from src.repository.report_repository import ReportRepository
 from src.utils.formaters import get_size
@@ -171,7 +166,7 @@ async def test_clean_reports():
 
     res = res.json()
     assert res["success"] and res["code"] == HTTPStatus.OK
-    assert Path(ENV.database_file).exists()
+    assert Path(DATABASE).exists()
     assert not Path(res["data"]["backup_file"]).exists()
     assert res["data"]["backup_file"] == backup_file
 
