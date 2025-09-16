@@ -30,7 +30,6 @@ dependencies = [
 description = "RESTful API for managing the IFMS Development Competition"
 keywords = ["python3", "competition", "technology", "web"]
 license = {text = "MIT"}
-license-files = ["LICENSE"]
 name = "IFMSDevCompetition"
 readme = "README.md"
 requires-external = "make"
