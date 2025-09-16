@@ -99,4 +99,5 @@ app.include_router(code_dirs_router)
 app.include_router(files_router)
 app.include_router(reports_router)
 
-app.mount("/images", StaticFiles(directory="images"))
+app.mount("/images", StaticFiles(directory=IMG_DIR, check_dir=False))
+app.mount("/web", StaticFiles(directory=WEB_DIR, check_dir=False))
