@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from http import HTTPStatus
 
 from fastapi import FastAPI
@@ -6,11 +7,12 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 from src import __version__
-from src.api.lifespan import lifespan
 from src.api.middleware import TracingTimeExceptionHandlerMiddleware
 from src.api.presenters import ErrorResponse, SuccessResponse
-from src.core.config import ENV, LIMITER, SECRET_KEY
+from src.core.config import ENV, IMG_DIR, LIMITER, SECRET_KEY, WEB_DIR
 from src.core.exception_handler import ExceptionHandler
+from src.core.screenshot_service import ScreenshotService
+from src.repository import BaseRepository
 from src.routes import (
     admin_router,
     code_dirs_router,
@@ -46,6 +48,18 @@ RESPONSES = {
         "description": "JSON error response",
     },
 }
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    WEB_DIR.mkdir(parents=True, exist_ok=True)
+    IMG_DIR.mkdir(parents=True, exist_ok=True)
+
+    BaseRepository.create_tables()
+    await ScreenshotService.initialize()
+    yield
+    await ScreenshotService.cleanup()
+
 
 app = FastAPI(
     debug=ENV.debug,

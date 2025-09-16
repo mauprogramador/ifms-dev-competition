@@ -9,13 +9,9 @@ import slowapi  # pylint: disable=w0611 # noqa: F401
 import uvicorn
 import webdriver_manager  # pylint: disable=w0611 # noqa: F401
 
-from src.core.config import APP, ENV, HEADERS, IMG_DIR, LOG, WEB_DIR
+from src.core.config import APP, ENV, HEADERS, LOG
 
 if __name__ == "__main__":
-
-    WEB_DIR.mkdir(parents=True, exist_ok=True)
-    IMG_DIR.mkdir(parents=True, exist_ok=True)
-
     LOG.info("\033[33mIFMS Dev Competition RESTful API was initialized 🚀")
     LOG.debug(ENV.model_dump())
 
