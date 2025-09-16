@@ -1,17 +1,18 @@
+# mypy: disable-error-code="index"
 from http import HTTPStatus
 
 from fastapi import HTTPException
+from httpx import AsyncClient as Client
 from pytest import mark, raises
 
-from src.core.config import ROUTE_PREFIX
 from src.repository.dynamic_repository import DynamicRepository
-from tests.mocks import CLIENT, DYNAMIC, DYNAMIC_IMG_PATH, DYNAMIC_WEB_PATH
+from tests.mocks import DYNAMIC, DYNAMIC_IMG_PATH, DYNAMIC_WEB_PATH
 
 
 @mark.order(2)
 @mark.asyncio
-async def test_list_dynamics():
-    res = CLIENT.get(f"{ROUTE_PREFIX}/list-dynamics")
+async def test_list_dynamics(client: Client):
+    res = await client.get("/list-dynamics")
     assert res.status_code == HTTPStatus.OK
 
     res = res.json()
@@ -22,9 +23,9 @@ async def test_list_dynamics():
 
 @mark.order(1)
 @mark.asyncio
-async def test_add_dynamic():
+async def test_add_dynamic(client: Client):
     body = {"name": DYNAMIC, "teams_number": 2}
-    res = CLIENT.post(f"{ROUTE_PREFIX}/add-dynamic", data=body)
+    res = await client.post("/add-dynamic", data=body)
     assert res.status_code == HTTPStatus.CREATED
 
     res = res.json()
@@ -40,8 +41,8 @@ async def test_add_dynamic():
 
 @mark.order(19)
 @mark.asyncio
-async def test_remove_dynamic():
-    res = CLIENT.delete(f"{ROUTE_PREFIX}/remove-dynamic/{DYNAMIC}")
+async def test_remove_dynamic(client: Client):
+    res = await client.delete("/remove-dynamic/{DYNAMIC}")
     assert res.status_code == HTTPStatus.OK
 
     res = res.json()

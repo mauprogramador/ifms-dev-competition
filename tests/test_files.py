@@ -1,15 +1,16 @@
+# mypy: disable-error-code="index"
 from http import HTTPStatus
 from io import BytesIO
 from zipfile import ZipFile
 
+from httpx import AsyncClient as Client
 from pytest import mark
 
 from src.common.enums import FileType
 from src.common.params import RetrieveData
-from src.core.config import DIFF_FILENAME, ROUTE_PREFIX, SCREENSHOT_FILENAME
+from src.core.config import DIFF_FILENAME, SCREENSHOT_FILENAME
 from src.repository.report_repository import ReportRepository
 from tests.mocks import (
-    CLIENT,
     DYNAMIC,
     DYNAMIC_IMG_PATH,
     DYNAMIC_WEB_PATH,
@@ -22,13 +23,15 @@ from tests.mocks import (
 @mark.order(11)
 @mark.parametrize("file_type, file_content", UPLOAD_FILE_PARAMS)
 @mark.asyncio
-async def test_upload_file(session_data, file_type, file_content):
+async def test_upload_file(
+    client: Client, session_data, file_type, file_content
+):
     code = session_data["code"]
 
-    url = f"{ROUTE_PREFIX}/{DYNAMIC}/upload"
+    url = f"/{DYNAMIC}/upload"
     data = {"code": code, "type": file_type, "file": file_content}
 
-    res = CLIENT.post(url, data=data)
+    res = await client.post(url, data=data)
     assert res.status_code == HTTPStatus.OK
 
     res = res.json()
@@ -58,11 +61,11 @@ async def test_upload_file(session_data, file_type, file_content):
 @mark.order(12)
 @mark.parametrize("file_type", FILE_TYPES_PARAMS)
 @mark.asyncio
-async def test_retrieve_file(session_data, file_type):
+async def test_retrieve_file(client: Client, session_data, file_type):
     code = session_data["code"]
-    url = f"{ROUTE_PREFIX}/{DYNAMIC}/retrieve"
+    url = f"/{DYNAMIC}/retrieve"
 
-    res = CLIENT.get(url, params={"code": code, "type": file_type})
+    res = await client.get(url, params={"code": code, "type": file_type})
     assert res.status_code == HTTPStatus.OK
 
     res = res.json()
@@ -80,8 +83,8 @@ async def test_retrieve_file(session_data, file_type):
 
 @mark.order(13)
 @mark.asyncio
-async def test_download():
-    res = CLIENT.get(f"{ROUTE_PREFIX}/{DYNAMIC}/download")
+async def test_download(client: Client):
+    res = await client.get(f"/{DYNAMIC}/download")
     assert res.status_code == HTTPStatus.OK
     assert res.headers["Content-Type"].count("application/zip")
     assert res.headers["Content-Disposition"].count(f"{DYNAMIC.lower()}.zip")

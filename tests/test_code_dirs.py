@@ -1,16 +1,17 @@
+# mypy: disable-error-code="index"
 from http import HTTPStatus
 
+from httpx import AsyncClient as Client
 from pytest import mark
 
 from src.common.enums import FileType
-from src.core.config import ROUTE_PREFIX
-from tests.mocks import CLIENT, DYNAMIC, DYNAMIC_WEB_PATH, code_dirs_list
+from tests.mocks import DYNAMIC, DYNAMIC_WEB_PATH, code_dirs_list
 
 
 @mark.order(4)
 @mark.asyncio
-async def test_list_code_dirs():
-    res = CLIENT.get(f"{ROUTE_PREFIX}/{DYNAMIC}/list")
+async def test_list_code_dirs(client: Client):
+    res = await client.get(f"/{DYNAMIC}/list")
     assert res.status_code == HTTPStatus.OK
 
     res = res.json()
@@ -26,8 +27,8 @@ async def test_list_code_dirs():
 
 @mark.order(3)
 @mark.asyncio
-async def test_add_code_dir(session_data):
-    res = CLIENT.post(f"{ROUTE_PREFIX}/{DYNAMIC}/add")
+async def test_add_code_dir(client: Client, session_data):
+    res = await client.post(f"/{DYNAMIC}/add")
     assert res.status_code == HTTPStatus.OK
 
     res = res.json()
@@ -45,10 +46,10 @@ async def test_add_code_dir(session_data):
 
 @mark.order(5)
 @mark.asyncio
-async def test_remove_code_dir(session_data):
+async def test_remove_code_dir(client: Client, session_data):
     code = session_data["code"]
 
-    res = CLIENT.delete(f"{ROUTE_PREFIX}/{DYNAMIC}/remove/{code}")
+    res = await client.delete(f"/{DYNAMIC}/remove/{code}")
     assert res.status_code == HTTPStatus.OK
 
     res = res.json()

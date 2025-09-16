@@ -1,13 +1,13 @@
+# mypy: disable-error-code="index"
 from datetime import datetime
 from http import HTTPStatus
 from typing import Any
 
+from httpx import AsyncClient as Client
 from pytest import mark
 
 from src.common.enums import Operation
-from src.core.config import ROUTE_PREFIX
 from tests.mocks import (
-    CLIENT,
     COUNT,
     DYNAMIC,
     FILE_TYPES_PARAMS,
@@ -19,10 +19,10 @@ from tests.mocks import (
 
 @mark.order(14)
 @mark.asyncio
-async def test_dynamic_report(session_data):
+async def test_dynamic_report(client: Client, session_data):
     code = session_data["code"]
 
-    res = CLIENT.get(f"{ROUTE_PREFIX}/{DYNAMIC}/dynamic-report")
+    res = await client.get(f"/{DYNAMIC}/dynamic-report")
     assert res.status_code == HTTPStatus.OK
 
     res = res.json()
@@ -31,6 +31,7 @@ async def test_dynamic_report(session_data):
     assert len(res["data"]["reports"]) == 4
 
     reports = tuple(filter(report_filter, res["data"]["reports"]))
+    print(type(reports))
     report: dict[str, Any] = reports[0]
     assert report["code"] == code
     assert report["operation"] == Operation.UPLOAD
@@ -43,13 +44,13 @@ async def test_dynamic_report(session_data):
 @mark.order(15)
 @mark.parametrize("file_type", FILE_TYPES_PARAMS)
 @mark.asyncio
-async def test_file_report(session_data, file_type):
+async def test_file_report(client: Client, session_data, file_type):
     code = session_data["code"]
 
     params = {"code": code, "type": file_type}
-    url = f"{ROUTE_PREFIX}/{DYNAMIC}/file-report"
+    url = f"/{DYNAMIC}/file-report"
 
-    res = CLIENT.get(url, params=params)
+    res = await client.get(url, params=params)
     assert res.status_code == HTTPStatus.OK
 
     res = res.json()
@@ -62,10 +63,12 @@ async def test_file_report(session_data, file_type):
 @mark.order(16)
 @mark.parametrize("operation, exchanges", OPERATION_REPORT_PARAMS)
 @mark.asyncio
-async def test_operation_report(session_data, operation, exchanges):
+async def test_operation_report(
+    client: Client, session_data, operation, exchanges
+):
     code = session_data["code"]
 
-    res = CLIENT.get(f"{ROUTE_PREFIX}/{DYNAMIC}/operation-report/{operation}")
+    res = await client.get(f"/{DYNAMIC}/operation-report/{operation}")
     assert res.status_code == HTTPStatus.OK
 
     res = res.json()

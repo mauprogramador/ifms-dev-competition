@@ -1,3 +1,4 @@
+# mypy: disable-error-code="index"
 from http import HTTPStatus
 from io import BytesIO
 from os import remove
@@ -6,16 +7,16 @@ from shutil import copy2
 
 from cv2 import imencode, imread
 from fastapi import HTTPException
+from httpx import AsyncClient as Client
 from pytest import mark, raises
 
 from src.common.enums import FileType
-from src.core.config import DIFF_FILENAME, ROUTE_PREFIX, SCREENSHOT_FILENAME
+from src.core.config import DIFF_FILENAME, SCREENSHOT_FILENAME
 from src.repository.dynamic_repository import DynamicRepository
 from src.repository.report_repository import ReportRepository
 from src.utils.formaters import get_size
 from tests.mocks import (
     ANSWER_KEY_PATH,
-    CLIENT,
     CSS_CONTENT,
     DATABASE,
     DYNAMIC,
@@ -33,9 +34,9 @@ from tests.mocks import (
 @mark.order(6)
 @mark.parametrize("status, boolean", LOCK_REQUESTS_PARAMS)
 @mark.asyncio
-async def test_lock_requests(status, boolean):
-    url = f"{ROUTE_PREFIX}/{DYNAMIC}/lock-requests"
-    res = CLIENT.put(url, params={"lock_status": status})
+async def test_lock_requests(client: Client, status, boolean):
+    url = f"/{DYNAMIC}/lock-requests"
+    res = await client.put(url, params={"lock_status": status})
 
     assert res.status_code == HTTPStatus.OK
     assert DynamicRepository.get_lock_status(DYNAMIC) is boolean
@@ -47,9 +48,9 @@ async def test_lock_requests(status, boolean):
 
 @mark.order(7)
 @mark.asyncio
-async def test_set_weight():
-    url = f"{ROUTE_PREFIX}/{DYNAMIC}/set-weight"
-    res = CLIENT.put(url, params={"weight": WEIGHT})
+async def test_set_weight(client: Client):
+    url = f"/{DYNAMIC}/set-weight"
+    res = await client.put(url, params={"weight": WEIGHT})
 
     assert res.status_code == HTTPStatus.OK
     assert DynamicRepository.get_weight(DYNAMIC) == WEIGHT
@@ -61,8 +62,8 @@ async def test_set_weight():
 
 @mark.order(8)
 @mark.asyncio
-async def test_save_answer_key_from_image():
-    url = f"{ROUTE_PREFIX}/{DYNAMIC}/answer-key"
+async def test_save_answer_key_from_image(client: Client):
+    url = f"/{DYNAMIC}/answer-key"
     image = imread(IMAGE_PATH)
 
     _, img_encoded = imencode(".png", image)
@@ -70,7 +71,7 @@ async def test_save_answer_key_from_image():
     file_data = ("test.png", BytesIO(image_bytes), "image/png")
 
     assert not ANSWER_KEY_PATH.exists()
-    res = CLIENT.post(url, files={"image": file_data})
+    res = await client.post(url, files={"image": file_data})
 
     assert res.status_code == HTTPStatus.OK
     assert DynamicRepository.get_size(DYNAMIC) == get_size(image)
@@ -85,8 +86,8 @@ async def test_save_answer_key_from_image():
 
 @mark.order(9)
 @mark.asyncio
-async def test_save_answer_key_failed_web_files():
-    url = f"{ROUTE_PREFIX}/{DYNAMIC}/answer-key"
+async def test_save_answer_key_failed_web_files(client: Client):
+    url = f"/{DYNAMIC}/answer-key"
     image = imread(IMAGE_PATH)
 
     _, img_encoded = imencode(".png", image)
@@ -102,7 +103,7 @@ async def test_save_answer_key_failed_web_files():
     assert not ANSWER_KEY_PATH.exists()
 
     with FAILED_WEB_FILES_MOCK as mock:
-        res = CLIENT.post(url, data=data, files={"image": file_data})
+        res = await client.post(url, data=data, files={"image": file_data})
         mock.assert_called_once()
 
     assert res.status_code == HTTPStatus.OK
@@ -118,8 +119,8 @@ async def test_save_answer_key_failed_web_files():
 
 @mark.order(10)
 @mark.asyncio
-async def test_save_answer_key_from_web_files():
-    url = f"{ROUTE_PREFIX}/{DYNAMIC}/answer-key"
+async def test_save_answer_key_from_web_files(client: Client):
+    url = f"/{DYNAMIC}/answer-key"
     data = {"html": HTML_CONTENT, "css": CSS_CONTENT}
 
     index_path = DYNAMIC_WEB_PATH / FileType.HTML.file
@@ -128,7 +129,7 @@ async def test_save_answer_key_from_web_files():
     assert not index_path.exists() and not css_path.exists()
     assert not ANSWER_KEY_PATH.exists()
 
-    res = CLIENT.post(url, data=data)
+    res = await client.post(url, data=data)
     assert res.status_code == HTTPStatus.OK
     size = DynamicRepository.get_size(DYNAMIC)
 
@@ -143,11 +144,11 @@ async def test_save_answer_key_from_web_files():
 
 @mark.order(17)
 @mark.asyncio
-async def test_clean_reports():
+async def test_clean_reports(client: Client):
     assert len(ReportRepository.get_dynamic_reports(DYNAMIC)) > 1
 
     with SHUTIL_COPY2_MOCK as mock:
-        res = CLIENT.delete(f"{ROUTE_PREFIX}/{DYNAMIC}/clean-reports")
+        res = await client.delete(f"/{DYNAMIC}/clean-reports")
         assert res.status_code == HTTPStatus.OK
 
         backup_file: str = mock.call_args[0][1]  # type:ignore
@@ -173,7 +174,7 @@ async def test_clean_reports():
 
 @mark.order(18)
 @mark.asyncio
-async def test_clean_files(session_data):
+async def test_clean_files(client: Client, session_data):
     code = session_data["code"]
 
     web_path = DYNAMIC_WEB_PATH / code
@@ -189,7 +190,7 @@ async def test_clean_files(session_data):
     assert len(css_path.read_text("utf-8")) > 0
     assert diff_path.exists() and screenshot_path.exists()
 
-    res = CLIENT.delete(f"{ROUTE_PREFIX}/{DYNAMIC}/clean-files")
+    res = await client.delete(f"/{DYNAMIC}/clean-files")
     assert res.status_code == HTTPStatus.OK
 
     res = res.json()

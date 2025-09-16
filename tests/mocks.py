@@ -3,15 +3,10 @@ from typing import Any
 from unittest.mock import patch
 from zipfile import ZipInfo
 
-from fastapi.testclient import TestClient
-
-from src.api.main import app
 from src.common.enums import FileType, LockStatus, Operation
 from src.core.config import ANSWER_KEY_FILENAME, IMG_DIR, WEB_DIR
 from src.use_cases.admin import clean_reports
 from src.use_cases.answer_key import AnswerKey
-
-CLIENT = TestClient(app)
 
 DATABASE = "tests/test_database.db"
 IMAGE_PATH = "tests/test.png"
