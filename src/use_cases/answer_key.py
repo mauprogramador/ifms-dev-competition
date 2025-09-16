@@ -7,13 +7,8 @@ from numpy import frombuffer, uint8
 from src.api.presenters import HTTPError, SuccessJSON
 from src.common.enums import FileType
 from src.common.params import UploadAnswerKey
-from src.core.config import (
-    ANSWER_KEY_FILENAME,
-    IMG_DIR,
-    LOG,
-    WEB_DIR,
-    WEB_DRIVER,
-)
+from src.core.config import ANSWER_KEY_FILENAME, IMG_DIR, LOG, WEB_DIR
+from src.core.screenshot_service import ScreenshotService
 from src.repository.dynamic_repository import DynamicRepository
 from src.utils.formaters import get_size
 
@@ -42,7 +37,7 @@ class AnswerKey:
 
         if form.web_fields:
             try:
-                self.__save_from_web_fields()
+                await self.__save_from_web_fields()
 
             except Exception as error:  # pylint: disable=W0718
                 if not form.image:
@@ -70,7 +65,7 @@ class AnswerKey:
             },
         )
 
-    def __save_from_web_fields(self) -> None:
+    async def __save_from_web_fields(self) -> None:
         dynamic_dir = WEB_DIR / self.__dynamic
 
         if not dynamic_dir.exists():
@@ -95,9 +90,7 @@ class AnswerKey:
             ) from error
 
         try:
-            WEB_DRIVER.get(html_path.absolute().as_uri())
-            WEB_DRIVER.implicitly_wait(1)
-            binary_screenshot = WEB_DRIVER.get_screenshot_as_png()
+            binary_screenshot = await ScreenshotService.render(html_path)
 
         except Exception as error:
             raise HTTPError(

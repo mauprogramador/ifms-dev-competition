@@ -1,3 +1,4 @@
+# mypy: disable-error-code="union-attr"
 from http import HTTPStatus
 from pathlib import Path
 
@@ -32,8 +33,8 @@ from src.core.config import (
     LOG,
     SCREENSHOT_FILENAME,
     WEB_DIR,
-    WEB_DRIVER,
 )
+from src.core.screenshot_service import ScreenshotService
 from src.repository import DynamicRepository
 from src.utils.formaters import get_size
 
@@ -60,7 +61,7 @@ class Similarity:
                 f"Index.html not found in {dynamic} {code} code dir",
             )
 
-        screenshot = self.__take_screenshot(html_path)
+        screenshot = await self.__take_screenshot(html_path)
 
         size = DynamicRepository.get_size(dynamic)
         LOG.debug({"answer_key_size": size})
@@ -113,11 +114,9 @@ class Similarity:
 
         return similarity
 
-    def __take_screenshot(self, html_path: Path) -> MatLike:
+    async def __take_screenshot(self, html_path: Path) -> MatLike:
         try:
-            WEB_DRIVER.get(html_path.absolute().as_uri())
-            WEB_DRIVER.implicitly_wait(1)
-            binary_screenshot = WEB_DRIVER.get_screenshot_as_png()
+            binary_screenshot = await ScreenshotService.render(html_path)
 
         except Exception as error:
             raise HTTPError(
@@ -135,7 +134,7 @@ class Similarity:
                 error=error,
             ) from error
 
-        return screenshot
+        return screenshot  # type: ignore
 
     def __save_and_resize_screenshot(
         self,

@@ -1,18 +1,11 @@
 from pathlib import Path
 from secrets import token_hex
 
-from selenium.webdriver import Chrome
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from webdriver_manager.chrome import ChromeDriverManager
 
 from src.core.env import EnvConfig
 from src.utils.logging import Logging
-
-# from multiprocessing import Pool
-
 
 APP = "src.api.main:app"
 ROUTE_PREFIX = "/v2/ifms-dev-competition/api"
@@ -35,22 +28,6 @@ LIMITER = Limiter(key_func=get_remote_address)
 LIMIT = "60/2seconds"
 
 ERROR_MESSAGE = "Unexpected internal error occurred"
-
-CHROME_OPTIONS = Options()
-CHROME_OPTIONS.add_argument("--headless")
-CHROME_OPTIONS.add_argument("--disable-gpu")
-
-CHROME_DRIVER = ChromeDriverManager()
-
-WEB_DRIVER = Chrome(
-    service=Service(CHROME_DRIVER.install()),
-    options=CHROME_OPTIONS,
-)
-
-WEB_DRIVER.set_window_position(0, 0)
-WEB_DRIVER.maximize_window()
-
-# POOL = Pool(processes=6)
 
 HEADERS = [
     (
