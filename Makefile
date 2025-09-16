@@ -11,6 +11,7 @@ venv:
 
 install:
 	@poetry install --no-root
+	@poetry run playwright install chromium
 
 
 # Run application
@@ -21,6 +22,13 @@ run:
 docker:
 	@docker build -q -t ifms-dev-competition .
 	@docker run -d --env HOST=0.0.0.0 --env-file .env --name ifms-dev-competition -p ${PORT}:${PORT} ifms-dev-competition
+
+
+# Tests
+
+test:
+	@poetry run pytest -v --color=yes
+
 
 # Formatting and Linting
 
@@ -33,3 +41,9 @@ lint:
 	@poetry run black src/ --check
 	@poetry run pylint src/
 	@poetry run mypy src/
+
+
+# Requirements
+
+req:
+	@poetry export -f requirements.txt -o requirements.txt --without-hashes --without-urls --only main
