@@ -1,34 +1,65 @@
 # IFMS Dev Competition
 
 <p align="center">
+  <img src="./ifms.png" width="150" alt="IFMS">
+<p>
+<p align="center">
   <em>RESTful API for managing the IFMS Development Competition</em>
 </p>
 <p align="center">
+  <a href="https://github.com/mauprogramador/scopus-survey-api/actions/workflows/verification.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/mauprogramador/scopus-survey-api/verification.yml?branch=master&event=push&logo=github&label=Lint%26Test&color=C5362B" alt="Lint & Test">
+  </a>
   <a href="https://github.com/mauprogramador/ifms-dev-competition/releases/latest" target="_blank" rel="external" title="Latest Release">
     <img src="https://img.shields.io/github/v/tag/mauprogramador/ifms-dev-competition?logo=github&label=Release&color=E9711C" alt="Latest Release">
   </a>
-  <a href="https://www.python.org/" target="_blank" rel="external" title="Python3 Version">
-    <img src="https://img.shields.io/badge/Python-v3.11-FBDA4E?logo=python&logoColor=FFF&labelColor=3776AB" alt="Python3 Version">
+  <a href="https://www.python.org/">
+    <img src="https://img.shields.io/badge/Python-v3.12-FBDA4E?logo=python&logoColor=FFF&labelColor=3776AB" alt="Python3 version">
   </a>
-  <a href="https://fastapi.tiangolo.com/" target="_blank" rel="external" title="FastAPI">
+</p>
+<p align="center">
+  <a href="https://fastapi.tiangolo.com/">
     <img src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=FFF" alt="FastAPI">
   </a>
-  <a href="https://docs.pydantic.dev/latest/" target="_blank" rel="external" title="Pydantic">
+  <a href="https://docs.pydantic.dev/latest/">
     <img src="https://img.shields.io/badge/Pydantic-E92063?logo=pydantic&logoColor=FFF" alt="Pydantic">
   </a>
-  <a href="https://black.readthedocs.io/en/stable/" target="_blank" rel="external" title="Black">
-    <img src="https://img.shields.io/badge/Black-000?logo=readthedocs&logoColor=FFF" alt="Black">
+  <a href="https://opencv.org/">
+    <img src="https://img.shields.io/badge/OpenCV-5C3EE8?logo=opencv&logoColor=FFF" alt="OpenCV">
+  </a>
+  <a href="https://playwright.dev/python/">
+    <img src="https://img.shields.io/badge/Playwrigt-6BBB4B?logo=pypi&logoColor=FFF" alt="Playwright">
+  </a>
+  <a href="https://www.python-httpx.org/">
+    <img src="https://img.shields.io/badge/HTTPX-3794F3?logo=pypi&logoColor=FFF" alt="HTTPX">
+  </a>
+  <a href="https://python-poetry.org/">
+    <img src="https://img.shields.io/badge/Poetry-60A5FA?logo=poetry&logoColor=FFF" alt="Poetry">
+  </a>
+  <a href="https://docs.pytest.org/en/stable/">
+    <img src="https://img.shields.io/badge/Pytest-0A9EDC?logo=pytest&logoColor=FFF" alt="Pytest">
+  </a>
+</p>
+<p align="center">
+  <a href="https://black.readthedocs.io/en/stable/">
+    <img src="https://img.shields.io/badge/code style-black-000" alt="Black">
+  </a>
+  <a href="https://mypy.readthedocs.io/en/stable/">
+    <img src="https://img.shields.io/badge/mypy-checked-2A6DB2" alt="MyPy">
+  </a>
+  <a href="https://pylint.readthedocs.io/en/stable/">
+    <img src="https://img.shields.io/badge/linting-pylint-yellowgreen" alt="Pylint">
   </a>
 </p>
 
 ---
 
-Federal Institute of Mato Grosso do Sul - <a href="https://www.ifms.edu.br/campi/campus-tres-lagoas" target="_blank" rel="external" title="IFMS - Campus Três Lagoas">IFMS - Campus Três Lagoas</a><br/>
-Technology in Systems Analysis and Development - <a href="https://www.ifms.edu.br/campi/campus-tres-lagoas/cursos/graduacao/analise-e-desenvolvimento-de-sistemas" target="_blank" rel="external" title="TADS">TADS</a><br/>
+Federal Institute of Mato Grosso do Sul &nbsp;&#8226;&nbsp; [IFMS - Campus Três Lagoas](https://www.ifms.edu.br/campi/campus-tres-lagoas)
+<br/>
+Technology in Systems Analysis and Development &nbsp;&#8226;&nbsp; [TADS](https://www.ifms.edu.br/campi/campus-tres-lagoas/cursos/graduacao/analise-e-desenvolvimento-de-sistemas)
 
-**RESTful API**: <a href="http://127.0.0.1:8000/v1/ifms-dev-competition/api" target="_blank" rel="external" title="Web API">http://127.0.0.1:8000/v1/ifms-dev-competition/api</a>
-
-**Swagger UI**: <a href="http://127.0.0.1:8000/docs" target="_blank" rel="external" title="Swagger UI">http://127.0.0.1:8000/</a>
+- RESTful API: <http://127.0.0.1:8000/v1/ifms-dev-competition/api>
+- Swagger UI: <http://127.0.0.1:8000/docs>
 
 ---
 
@@ -60,52 +91,63 @@ This application has a request rate limiting mechanism for **API tagged routes**
 
 You can create an `.env` file to configure the following options:
 
-| **Parameter**   | **Description**                                            | **Default**   |
-| --------------- | ---------------------------------------------------------- | ------------- |
-| `database_file` | Sets the database file (*.db*) absolute path               | `database.db` |
-| `host`          | Sets the host address to listen on                         | `127.0.0.1`   |
-| `port`          | Sets the server port on which the application will run     | `8000`        |
-| `reload`        | Enable auto-reload on file changes for local development   | `false`       |
-| `workers`       | Sets multiple worker processes                             | `1`           |
-| `logging_file`  | Enable saving logs to files                                | `false`       |
-| `debug`         | Enable the debug mode and debug logs                       | `false`       |
+| **Parameter**   | **Description**                                          | **Default**   |
+| --------------- | -------------------------------------------------------- | ------------- |
+| `DATABASE_FILE` | Sets the database file (_.db_) absolute path             | `database.db` |
+| `HOST`          | Sets the host address to listen on                       | `127.0.0.1`   |
+| `PORT`          | Sets the server port on which the application will run   | `8000`        |
+| `RELOAD`        | Enable auto-reload on file changes for local development | `false`       |
+| `WORKERS`       | Sets multiple worker processes                           | `1`           |
+| `LOGGING_FILE`  | Enable saving logs to files                              | `false`       |
+| `DEBUG`         | Enable the debug mode and debug logs                     | `false`       |
 
-- The `reload` and `workers` options are **mutually exclusive**.
+- The `RELOAD` and `WORKERS` options are **mutually exclusive**.
 
-- Setting the `host` to `0.0.0.0` makes the application externally available.
+- Setting the `HOST` to `0.0.0.0` makes the application externally available.
 
-- Set the `database_file` like `/home/user/project/repository/database.db`.
+- Set the `DATABASE_FILE` like `/home/user/project/repository/database.db`.
+
+- Set `WORKERS`, **maximum 4**, to start **multiple server processes**.
 
 - Database backup files will be saved inside the `/repository` directory.
 
-Take a look at the [`.env.example`](./.env.example) file.
+> [!TIP]
+> Take a look at the [`.env.example`](./.env.example) file.
 
 ---
 
-## Run locally
+## Run locally with Poetry or Pip
 
-You will need <a href="https://www.python.org/downloads/release/python-3117/" target="_blank" rel="external" title="Python3.11">Python3 `v3.11`</a> with <a href="https://pip.pypa.io/en/stable/installation/" target="_blank" rel="external" title="Pip">Pip</a> and <a href="https://docs.python.org/3/library/venv.html" target="_blank" rel="external" title="Pip">Venv</a> installed.
+You will need [Python3.12](https://www.python.org/downloads/release/python-31211/) with [Pip](https://pip.pypa.io/en/stable/installation/) and [Venv](https://docs.python.org/3/library/venv.html) installed.
 
 ```bash
 # Create new Venv
-make venv
+python3.12 -m venv .venv
 
 # Activate Venv
 source .venv/bin/activate
 
-# Install dependencies with Poetry
+# Update Pip
+(.venv) pip install --upgrade pip
+
+# Install Wheel and Poetry
+(.venv) pip3 install wheel
+(.venv) pip3 install poetry
+
+# Install dependencies with Poetry [1]
 (.venv) make install
 
-# Install dependencies with Pip
-(.venv) pip3 install -r requirements.txt
+# Install dependencies with Pip [2]
+(.venv) pip3 install -r requirements/requirements.txt
+(.venv) poetry run playwright install chromium
 
-# Run the API locally
+# Run the App locally
 (.venv) make run
 ```
 
-## Run in Docker
+## Run with Docker
 
-You will need <a href="https://www.docker.com/" target="_blank" rel="external" title="Docker">Docker</a> installed.
+You will need [Docker](https://www.docker.com/) installed.
 
 ```bash
 # Run the App in Docker Container
@@ -114,4 +156,10 @@ make docker
 
 ---
 
-This project is licensed under the terms of the [MIT license](./LICENSE)
+For questions or concerns please contact me at <sir.silvabmauricio@gmail.com>.
+
+[License](./LICENSE)
+&nbsp;&#8226;&nbsp;
+[Latest Release](https://github.com/mauprogramador/ifms-dev-competition/releases/latest)
+&nbsp;&#8226;&nbsp;
+[Changelog](./CHANGELOG.md)
