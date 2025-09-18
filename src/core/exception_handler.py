@@ -106,6 +106,7 @@ class ExceptionHandler:
         return item
 
     def __exception_filter(self, item: dict[str, Any]) -> dict[str, Any]:
-        if "ctx" in item and isinstance(item["ctx"]["error"], Exception):
-            item["ctx"]["error"] = type(item["ctx"]["error"]).__name__
+        if "ctx" in item and "error" in item["ctx"]:
+            if isinstance(item["ctx"]["error"], Exception):
+                item["ctx"]["error"] = type(item["ctx"]["error"]).__name__
         return item
