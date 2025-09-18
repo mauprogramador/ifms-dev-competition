@@ -59,7 +59,7 @@ Federal Institute of Mato Grosso do Sul &nbsp;&#8226;&nbsp; [IFMS - Campus Três
 Technology in Systems Analysis and Development &nbsp;&#8226;&nbsp; [TADS](https://www.ifms.edu.br/campi/campus-tres-lagoas/cursos/graduacao/analise-e-desenvolvimento-de-sistemas)
 
 - RESTful API: <http://127.0.0.1:8000/v1/ifms-dev-competition/api>
-- Swagger UI: <http://127.0.0.1:8000/docs>
+- Swagger UI: <http://127.0.0.1:8000>
 
 ---
 
@@ -122,24 +122,16 @@ You will need [Python3.12](https://www.python.org/downloads/release/python-31211
 
 ```bash
 # Create new Venv
-python3.12 -m venv .venv
+make venv
 
 # Activate Venv
 source .venv/bin/activate
 
-# Update Pip
-(.venv) pip install --upgrade pip
-
-# Install Wheel and Poetry
-(.venv) pip3 install wheel
-(.venv) pip3 install poetry
-
 # Install dependencies with Poetry [1]
-(.venv) make install
+(.venv) make poetry-install
 
 # Install dependencies with Pip [2]
-(.venv) pip3 install -r requirements/requirements.txt
-(.venv) poetry run playwright install chromium
+(.venv) make pip-install
 
 # Run the App locally
 (.venv) make run
