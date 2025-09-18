@@ -21,7 +21,7 @@ SHUTIL_COPY2_MOCK = patch(
 FAILED_WEB_FILES_MOCK = patch.object(
     AnswerKey,
     f"_{AnswerKey.__name__}__save_from_web_fields",
-    side_effect=Exception("Ops"),
+    side_effect=Exception("any"),
 )
 
 WEIGHT = 123
@@ -36,6 +36,7 @@ HTML_CONTENT = """
     <!DOCTYPE html>
     <html lang="en">
         <head>
+            <link href="style.css" rel="stylesheet" />
             <title>Document</title>
         </head>
         <body>
