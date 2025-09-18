@@ -21,7 +21,9 @@ from tests.mocks import (
 
 
 @mark.order(11)
-@mark.parametrize("file_type, file_content", UPLOAD_FILE_PARAMS)
+@mark.parametrize(
+    "file_type, file_content", UPLOAD_FILE_PARAMS, ids=FILE_TYPES_PARAMS
+)
 @mark.asyncio
 async def test_upload_file(
     client: Client, session_data, file_type, file_content

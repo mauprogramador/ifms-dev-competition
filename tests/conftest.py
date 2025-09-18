@@ -15,8 +15,9 @@ from tests.mocks import DATABASE, DYNAMIC_IMG_PATH, DYNAMIC_WEB_PATH
 
 install()
 TIMEOUT = 15
-BASE_URL = urljoin("http://127.0.0.1:123", ROUTE_PREFIX)
-TRANSPORT = ASGITransport(app=app, client=("127.0.0.1", 123))
+CLIENT = ("127.0.0.1", 2007)
+BASE_URL = f"http://{CLIENT[0]}:{CLIENT[1]}"
+TRANSPORT = ASGITransport(app=app, client=CLIENT)
 
 
 @fixture(scope="session")
@@ -57,8 +58,10 @@ async def load_screenshot_service():
 
 
 @async_fixture(name="client")
-async def httpx_async_client(screenshot: None):
+async def httpx_async_client(screenshot: None):  # pylint: disable=W0613
     async with AsyncClient(
-        timeout=TIMEOUT, base_url=BASE_URL, transport=TRANSPORT
+        timeout=TIMEOUT,
+        base_url=urljoin(BASE_URL, ROUTE_PREFIX),
+        transport=TRANSPORT,
     ) as client:
         yield client

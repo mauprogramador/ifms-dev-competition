@@ -42,7 +42,7 @@ async def test_add_dynamic(client: Client):
 @mark.order(19)
 @mark.asyncio
 async def test_remove_dynamic(client: Client):
-    res = await client.delete("/remove-dynamic/{DYNAMIC}")
+    res = await client.delete(f"/remove-dynamic/{DYNAMIC}")
     assert res.status_code == HTTPStatus.OK
 
     res = res.json()
