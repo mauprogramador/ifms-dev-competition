@@ -8,7 +8,7 @@ RUN pip install --upgrade pip && pip3 install wheel && pip3 install poetry
 COPY ./pyproject.toml $WORKDIR
 COPY ./poetry.lock $WORKDIR
 
-RUN poetry install --no-root
+RUN poetry install --no-root && poetry run playwright install chromium
 
 COPY ./src $WORKDIR/src
 
