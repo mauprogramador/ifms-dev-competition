@@ -1,44 +1,59 @@
-# 📜 Changelog (2025-09-16) <span id='start'></span>
+# 📜 Changelog (2025-09-17) <span id='start'></span>
 
 > In development since: **January 14, 2025**.
 
-**Tags: [`v0.1.0`](#v0.1.0), [`v0.2.0`](#v0.2.0), [`v0.3.0`](#v0.3.0), [`v0.4.0`](#v0.4.0), [`v0.5.0`](#v0.5.0), [`v0.5.2`](#v0.5.2), [`v0.5.3`](#v0.5.3), [`v0.5.4`](#v0.5.4), [`v0.5.5`](#v0.5.5).**
+**Tags: [`v0.1.0`](#v0.1.0), [`v0.2.0`](#v0.2.0), [`v0.3.0`](#v0.3.0), [`v0.4.0`](#v0.4.0), [`v0.5.0`](#v0.5.0), [`v0.5.2`](#v0.5.2), [`v0.5.3`](#v0.5.3), [`v0.5.4`](#v0.5.4), [`v0.5.5`](#v0.5.5), [`v0.5.6`](#v0.5.6).**
 
 <br>
 
-## 🔥 Latest Unreleased
+## 🔖 Release [`v0.5.6`](https://github.com/mauprogramador/ifms-dev-competition/releases/tag/v0.5.6) (2025-09-17) <span id='v0.5.6'></span> [`▴`](#start)
+
+See the [⇅ comparison history](https://github.com/mauprogramador/ifms-dev-competition/compare/v0.5.5...v0.5.6) with the previous tag.
 
 ### 🔨 Builds
 
-- Exchange selenium and webdriver for playwright. [#9b73dd1](https://github.com/mauprogramador/ifms-dev-competition/commit/9b73dd1948c6571cdc55feebe787d435c3544210) (2025-09-16)
+- Add playwright asyncio pytest plugin and set loop to session. [#b402bfc](/b402bfc29904f4feb02ba89a957a62793bc74c5f) (2025-09-17)
+- Exchange selenium and webdriver for playwright. [#9b73dd1](/9b73dd1948c6571cdc55feebe787d435c3544210) (2025-09-16)
 
 ### ✨ Features
 
-- Exchange selenium and webdriver for playwright. [#d3e9107](https://github.com/mauprogramador/ifms-dev-competition/commit/d3e9107ef32eb90ba5e1e9d4afe4bf07402009b2) (2025-09-16)
-- Serve images and web dirs static files. [#ed869a6](https://github.com/mauprogramador/ifms-dev-competition/commit/ed869a6419d0ca3bec5296d55063567f0380597f) (2025-09-16)
-- Run with uvloop. [#0eb82b3](https://github.com/mauprogramador/ifms-dev-competition/commit/0eb82b3e85f86bd43ce328276edefcd3a97defcb) (2025-09-16)
-- Add exception logs on handler. [#063a9dd](https://github.com/mauprogramador/ifms-dev-competition/commit/063a9ddfc31bc7c75f349dd31ad6889ec6071cb1) (2025-09-16)
+- Exchange selenium and webdriver for playwright. [#d3e9107](/d3e9107ef32eb90ba5e1e9d4afe4bf07402009b2) (2025-09-16)
+- Serve images and web dirs static files. [#ed869a6](/ed869a6419d0ca3bec5296d55063567f0380597f) (2025-09-16)
+- Run with uvloop. [#0eb82b3](/0eb82b3e85f86bd43ce328276edefcd3a97defcb) (2025-09-16)
+- Add exception logs on handler. [#063a9dd](/063a9ddfc31bc7c75f349dd31ad6889ec6071cb1) (2025-09-16)
+
+### 🔧 Fixes
+
+- Pre create required static dirs. [#5f87de6](/5f87de623fb5f1dfedfaa5dc9b96291d9571f0bf) (2025-09-17)
+- Check for error key in error context. [#9192e00](/9192e0071fa033ef4eac0d106bc9439c0bf76c53) (2025-09-17)
 
 ### ♻️ Refactors
 
-- Move lifespan to main. [#0a07d71](https://github.com/mauprogramador/ifms-dev-competition/commit/0a07d7142b59e4d203c243bb8918e771531ec6dc) (2025-09-16)
+- Cache and use the same page. [#8891924](/88919241086be77e5a3501382fe53df064851cc7) (2025-09-17)
+- Move lifespan to main. [#0a07d71](/0a07d7142b59e4d203c243bb8918e771531ec6dc) (2025-09-16)
 
 ### 🧪 Tests
 
-- Use async client and add uvloop and session fixtures. [#97eb437](https://github.com/mauprogramador/ifms-dev-competition/commit/97eb43713ca4a5968309e7006544d1a6a1d02674) (2025-09-16)
+- Run file server process to load pages for playwright. [#f717590](/f717590a470f4ed74de11eb5336b1a108380eee2) (2025-09-17)
+- Update tests. [#5e0f752](/5e0f752484fd491f14b5bd013a7d1a603b341bcc) (2025-09-17)
+- Load css style on playwright. [#da8a224](/da8a2241047486289f69a78a91ec89cc7e11d99c) (2025-09-17)
+- Use async client and add uvloop and session fixtures. [#97eb437](/97eb43713ca4a5968309e7006544d1a6a1d02674) (2025-09-16)
 
 ### 📝 Chores
 
-- Update readme. [#7fac2a2](https://github.com/mauprogramador/ifms-dev-competition/commit/7fac2a2b61d0304523798cc8a800fb1ea0792b67) (2025-09-16)
-- Update config files. [#590e2f8](https://github.com/mauprogramador/ifms-dev-competition/commit/590e2f8748385c7cf7116519e2f8b867179f60ac) (2025-09-16)
+- Remove license-files. [#b09da61](/b09da61975176157c40a23d20629269df44c7fe5) (2025-09-16)
+- Add changelog. [#e98e88e](/e98e88e5c9c5eb5f37738622998511aae6014669) (2025-09-16)
+- Update readme. [#7fac2a2](/7fac2a2b61d0304523798cc8a800fb1ea0792b67) (2025-09-16)
+- Update config files. [#590e2f8](/590e2f8748385c7cf7116519e2f8b867179f60ac) (2025-09-16)
 
 ### 🎨 Styles
 
-- Add comments. [#4ea8ad3](https://github.com/mauprogramador/ifms-dev-competition/commit/4ea8ad3dec2c2440875e855acf49afa2e5a7d356) (2025-09-16)
+- Add comments. [#4ea8ad3](/4ea8ad3dec2c2440875e855acf49afa2e5a7d356) (2025-09-16)
 
 ### 📌 Others
 
-- Add verification workflow. [#97a2f69](https://github.com/mauprogramador/ifms-dev-competition/commit/97a2f692dca2f0adf17459e64e3ee40bf26f1a56) (2025-09-16)
+- Update branch name. [#903efc9](/903efc997b78982371dda47c9dc7cc6635794f17) (2025-09-17)
+- Add verification workflow. [#97a2f69](/97a2f692dca2f0adf17459e64e3ee40bf26f1a56) (2025-09-16)
 
 <br>
 
