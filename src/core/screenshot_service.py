@@ -1,6 +1,6 @@
 from asyncio import Lock
 
-from playwright.async_api import Browser, Playwright, async_playwright
+from playwright.async_api import Browser, Page, Playwright, async_playwright
 
 from src.core.config import ENV
 
@@ -12,14 +12,17 @@ class ScreenshotService:
         "--disable-dev-shm-usage",
         "--disable-gpu",
     ]
-    _BASE_URL = f"http://{ENV.host}:{ENV.port}"
+    BASE_URL = f"http://{ENV.host}:{ENV.port}"
     _VIEWPORT = {"width": 1280, "height": 720}
     _PLAYWRIGHT: Playwright = None
+    _BLANK_PAGE = "about:blank"
     _BROWSER: Browser = None
-    _REQUEST_COUNTER = 0
+    _NEW_PAGE_TIMEOUT = 7000  # 7s
     _STATUS = "networkidle"
+    _REQUEST_COUNTER = 0
+    _PAGE: Page = None
     _FULL_PAGE = True
-    _TIMEOUT = 1000
+    _TIMEOUT = 1000  # 1s
     _LOCK = Lock()
     _TYPE = "png"
 
@@ -30,28 +33,26 @@ class ScreenshotService:
             cls._BROWSER = await cls._PLAYWRIGHT.chromium.launch(
                 headless=True, args=cls._ARGS
             )
+            cls._PAGE = await cls._BROWSER.new_page(
+                viewport=cls._VIEWPORT, base_url=cls.BASE_URL
+            )
 
     @classmethod
     async def render(cls, static_url: str) -> bytes:
-        page = await cls._BROWSER.new_page(
-            viewport=cls._VIEWPORT, base_url=cls._BASE_URL
+        await cls._PAGE.goto(cls._BLANK_PAGE)
+        await cls._PAGE.goto(static_url, wait_until=cls._STATUS)
+        await cls._PAGE.wait_for_timeout(cls._TIMEOUT)
+
+        screenshot_bytes = await cls._PAGE.screenshot(
+            full_page=cls._FULL_PAGE,
+            type=cls._TYPE,
         )
-        try:
-            await page.goto(static_url, wait_until=cls._STATUS)
-            await page.wait_for_timeout(cls._TIMEOUT)
-
-            screenshot_bytes = await page.screenshot(
-                full_page=cls._FULL_PAGE,
-                type=cls._TYPE,
-            )
-
-        finally:
-            await page.close()
-
         return screenshot_bytes
 
     @classmethod
     async def cleanup(cls):
+        if not cls._PAGE.is_closed():
+            await cls._PAGE.close()
         if cls._BROWSER.is_connected():
             await cls._BROWSER.close()
         await cls._PLAYWRIGHT.stop()
