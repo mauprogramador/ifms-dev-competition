@@ -1,43 +1,31 @@
 #!/bin/bash
 
-REGEX="^[0-9]{1,2}$"
-trap "echo -e '\033[35;1m!\033[m \033[91mGot an interruption ✘\033[m' ; exit 1" SIGINT
+trap "echo -e '\033[35;1m!\033[m \033[91mGot an interruption ✘\033[m'; exit 1" SIGINT
 echo -e "\033[35;1m>\033[m Checking Prerequisites..."
 
-# Checking if Python3 (and which of it) is installed
 if command -v python3 &>/dev/null; then
 
-    version="11"
-    if [[ -n "$1" ]]; then
-        if ! [[ "$1" =~ $REGEX ]]; then
-            echo -e "-\033[91m Invalid Python3 version ✘\033[m"
-            echo -e "\033[35;1m!\033[m Please inform a valid Python3 version (e.g. inform \033[37;1m11\033[m for Python3.11)"
-            exit 1
-        fi
-        version="$1"
-    fi
-
+    version="12"
     if command -v python3."$version" &>/dev/null; then
         echo -e "-\033[92m $(python3."$version" -V) installed ✔\033[m"
     else
+        echo -e "-\033[91m Python3.$version not installed ✘\033[m"
+        echo -e "\033[93mWARNING:\033[m This application was built on \033[37;1mPython3.12.11\033[m, so some unexpected errors may occur when using a different version."
+
         version=$(ls -1 /usr/bin/python3* | grep -Eo 'python3\.[0-9]*$' | sort -V | uniq | tail -n 1 | grep -oP '\d+\.\K\d+')
-
-        echo -e "-\033[91m Python 3.$version not installed ✘\033[m"
-        echo -e "\033[93mWARNING:\033[m This application was built on \033[37;1mPython3.11.0rc1\033[m, so some unexpected errors may occur when using a different version."
-
         echo -ne "\033[35;1m?\033[m Would you like to continue with \033[37;1m$(python3."$version" -V)\033[m? [\033[32my\033[m/\033[31mn\033[m]: "
         read answer
 
         if [ "$answer" = "Y" ] || [ "$answer" = "y" ]; then
             echo -e "-\033[92m Running with $(python3."$version" -V) ✔\033[m"
         else
-            echo -e "\033[35;1m!\033[m Please install \033[37;1mPython\033[m at least version \033[37;1m3.11\033[m. For further information visit https://docs.python-guide.org/starting/install3/linux/"
+            echo -e "Please install \033[37;1mPython3.12\033[m"
             exit 1
         fi
     fi
 else
     echo -e "-\033[91m Python3 not installed ✘\033[m"
-    echo -e "\033[35;1m!\033[m Please install \033[37;1mPython\033[m at least version \033[37;1m3.11\033[m. For further information visit https://docs.python-guide.org/starting/install3/linux/"
+    echo -e "Please install \033[37;1mPython3.12\033[m"
     exit 1
 fi
 
@@ -73,20 +61,16 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo -e "-\033[92m Virtual Environment \033[m(\033[34;1m.venv\033[m\033[m)\033[92m created ✔\033[m"
-
 source .venv/bin/activate
 
-echo -e "\033[35;1m>\033[m Upgrading \033[37;1mPip\033[m and installing packages...\033[m"
+echo -e "\033[35;1m>\033[m Upgrading \033[37;1mPip\033[m and installing \033[37;1mWheel\033[m...\033[m"
 
 pip install --upgrade pip
 
 pip3 install wheel
 
-pip3 install poetry
-
-echo -e "-\033[92m Wheel and Poetry packages installed ✔\033[m"
+echo -e "-\033[92m Wheel package installed ✔\033[m"
 
 deactivate
 
-echo -e "\033[35;1m>\033[m Completed. Please run\033[37;1m make install\033[m\n"
+echo -e "\033[35;1m>\033[92m Virtual Environment \033[m(\033[34;1m.venv\033[m\033[m)\033[92m created ✔\033[m"
