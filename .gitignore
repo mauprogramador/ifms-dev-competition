@@ -20,3 +20,4 @@ images/
 *.log
 *.db
 local_test.py
+server.ssh
