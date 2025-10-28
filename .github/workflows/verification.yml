@@ -43,8 +43,8 @@ jobs:
       - name: Install Dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          python -m pip install --upgrade pip
-          poetry install --only dev,test --no-root --no-interaction
+          python3 -m pip install --upgrade pip
+          poetry install --with dev,test --no-interaction
 
       - name: Linting
         run: poetry run make lint
