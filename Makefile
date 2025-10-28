@@ -14,7 +14,7 @@ venv:
 
 poetry-install:
 	pip3 install poetry==$(POETRY_VERSION)
-	poetry install --no-root
+	poetry install --only-root
 	poetry run playwright install chromium
 
 pip-install:
